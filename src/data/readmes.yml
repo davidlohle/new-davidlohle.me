@@ -1,0 +1,35 @@
+readme-mphjw4dv:
+  x: 1011
+  y: 1293
+  width: 843
+  rotation: 0
+  projectId: dominion
+  viewZoom: 0.85
+  pin: README
+  title: <em>Dominion</em> online
+  mobile:
+    x: 30
+    y: 3500
+    width: 340
+  status: "status: active | 2026"
+  body: >-
+    <p>My friends and I really like the card game Dominion. There are already official online offerings of Dominion, but
+    we like playing with house rules, custom printed cards, and competitive matches with rewards. In addition, I thought
+    the UX of the existing online Dominion services were a bit difficult. So, I set out to make my own.</p> 
+
+    <p>I built a verb-based engine where every Dominion card is expressed as a composition of low-level primitives
+    (called <em>verbs</em> for common actions, like <em>gain_card</em> or <em>trash_card</em>. Cards register themselves
+    via decorators into a central dispatch registry, which are looked up by the core engine loop as events come in.
+    Branching, multi-step interactions (i.e. <i>"trash a card, then gain a card costing $2 more than it"</i>) collapse
+    into an atomic state machine installed as a "pending action", pausing the game loop while the nested action
+    completes. </p>
+
+    <p>The payoff of this architecture is its' extensibility; adding a new card, a full custom expansion, or a house
+    rule is a single decorated function leveraging these API-like verbs—no changes to the engine required.</p> 
+  tags:
+    - Python
+    - Flask
+    - React
+    - Javascript
+    - Jotai
+  links: []

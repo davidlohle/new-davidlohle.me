@@ -1,0 +1,34 @@
+dominion:
+  name: Dominion Online
+  status: active
+  period: "2026 — now"
+  description: "An implementation of the card game Dominion, with a verb-based engine capable of custom house rules and custom expansions"
+  order: 1
+
+sibyl:
+  name: "Sibyl"
+  status: active
+  period: "2016 - now"
+  description: "A multi-faceted authN/authZ gateway to facilitate SSH and HTTP traffic, with impersonation abilities"
+  order: 2
+
+hydra:
+  name: Hydra
+  status: active
+  period: "2018 - now"
+  description: "A tool to solve the long-tail problem of TV/Movie metadata lookup, and decide what's correct when there's conflicting information"
+  order: 3
+
+flere:
+  name: "Flere-Imsaho (née Spark)"
+  status: active
+  period: "2014 - now"
+  description: "Long-term experimental project for a digital personal assistant: started with NTLP in 2014 but in 2026 now leverages a farm of locally hosted LLMs + MCP tools"
+  order: 4
+
+aegis:
+  name: Aegis
+  status: archived
+  period: "2017-2020"
+  description: "A general purpose delta snapshot backup utility. Originally started to backup Minecraft server maps in a space-efficient manner, but envolved to support any file system"
+  order: 5

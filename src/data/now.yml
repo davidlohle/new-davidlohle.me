@@ -1,0 +1,19 @@
+reading:
+  label: Reading
+  text: "Re-reading the 'A Song of Ice and Fire' series"
+  order: 1
+
+cooking:
+  label: Building
+  text: "A <em>Dominion</em> online clone."
+  order: 2
+
+riding:
+  label: Riding
+  text: "Brooklyn → Far Rockaway, 42 miles."
+  order: 3
+
+listening:
+  label: Listening
+  text: "Dorian Electra's new cover album"
+  order: 4
