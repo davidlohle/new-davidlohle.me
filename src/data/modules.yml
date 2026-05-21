@@ -1,0 +1,63 @@
+hero:
+  x: 2700
+  y: 2200
+  width: 2400
+  viewZoom: 0.55
+  mobile:
+    x: 30
+    y: 80
+    width: 340
+about:
+  x: 5196
+  y: 3112
+  width: 580
+  viewZoom: 1
+  mobile:
+    x: 30
+    y: 440
+    width: 340
+now:
+  x: 6316
+  y: 2441
+  width: 560
+  viewZoom: 1
+  mobile:
+    x: 30
+    y: 1070
+    width: 340
+photo:
+  x: 3200
+  y: 1280
+  width: 1100
+  viewZoom: 0.9
+  mobile:
+    x: 30
+    y: 1490
+    width: 340
+projects:
+  x: 5231
+  y: 1409
+  width: 1100
+  viewZoom: 0.85
+  mobile:
+    x: 30
+    y: 2190
+    width: 340
+writing:
+  x: 1880
+  y: 3100
+  width: 760
+  viewZoom: 1
+  mobile:
+    x: 30
+    y: 1970
+    width: 340
+contact:
+  x: 3400
+  y: 3800
+  width: 1100
+  viewZoom: 0.85
+  mobile:
+    x: 30
+    y: 3050
+    width: 340
