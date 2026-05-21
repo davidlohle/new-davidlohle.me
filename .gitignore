@@ -1,0 +1,25 @@
+dist/
+.astro/
+node_modules/
+
+dist.zip
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.env
+.env.production
+
+.DS_Store
+.idea/
+.vscode/
+
+personal-portfolio/
+design.tar.gz
+
+# Reckless is licensed — don't publish
+public/fonts/Reckless*
+
+ARCHITECTURE.md
