@@ -1,0 +1,346 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+type RenderedPost = {
+  post: CollectionEntry<'blog'>;
+  Content: import('astro').ComponentInstance['default'] | any;
+  crumb: string;
+  read: string;
+  fullDate: string;
+};
+
+interface Props {
+  renderedPosts: RenderedPost[];
+}
+
+const { renderedPosts } = Astro.props;
+---
+
+{/* Post overlay: slide-in essay reader. Markup is empty until openPost(id)
+    populates it from the matching <template data-post-id="..."> below. */}
+<div id="post-overlay" aria-hidden="true">
+  <div class="post-backdrop"></div>
+  <article class="post-sheet" id="post-sheet">
+    <header class="post-topbar">
+      <div class="crumbs"><span>Writing</span><span class="sep">·</span><b id="post-crumb">—</b></div>
+      <button class="post-close" id="post-close" type="button" aria-label="Close">×</button>
+    </header>
+    <div class="post-inner" id="post-inner"></div>
+  </article>
+</div>
+
+{/* Pre-rendered post bodies. <template> is inert — content is cloned into
+    the overlay when a post is opened. */}
+{renderedPosts.map(({ post, Content, crumb, read, fullDate }) => (
+  <template
+    data-post-id={post.id}
+    data-title={post.data.title}
+    data-crumb={crumb}
+    data-date={fullDate}
+    data-read={read}
+    data-dek={post.data.summary ?? ''}
+  >
+    <Content />
+  </template>
+))}
+
+{/*
+  POST OVERLAY styles — kept global because the inner content (.post-meta,
+  .post-title, .post-dek, .post-body and the markdown-rendered <p>/<h2>/etc.)
+  is built at runtime via innerHTML/template-clone, so it never receives
+  Astro's data-astro-cid scope attribute. Scoped rules would silently miss
+  these elements.
+*/}
+<style is:global>
+  #post-overlay {
+    position: fixed; inset: 0;
+    z-index: 150;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .35s ease;
+  }
+  #post-overlay.open {
+    pointer-events: auto;
+    opacity: 1;
+  }
+  #post-overlay .post-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(241, 234, 215, .55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #post-overlay .post-sheet {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: min(920px, 100vw);
+    background: var(--paper);
+    color: var(--ink);
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 0 60px rgba(40, 30, 20, .25);
+    border-left: 1px solid var(--ink);
+    transform: translateX(100%);
+    transition: transform .5s cubic-bezier(.2, .85, .25, 1);
+    will-change: transform;
+    font-family: "Newsreader", Georgia, serif;
+    user-select: text;
+  }
+  #post-overlay.open .post-sheet { transform: translateX(0); }
+  #post-overlay .post-topbar {
+    position: sticky; top: 0;
+    background: rgba(241, 234, 215, .92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 14px 20px 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--rule);
+    font-family: "Geist Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    z-index: 2;
+  }
+  #post-overlay .post-topbar .crumbs { display: flex; gap: 14px; align-items: center; }
+  #post-overlay .post-topbar .crumbs .sep { color: var(--rule); }
+  #post-overlay .post-topbar .crumbs b { color: var(--ink); font-weight: 500; }
+  #post-overlay .post-close {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    font-family: "Reckless", serif;
+    font-size: 18px;
+    line-height: 1;
+    transition: background .2s;
+  }
+  #post-overlay .post-close:hover { background: var(--accent); }
+  #post-overlay .post-inner {
+    padding: 60px 64px 100px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  #post-overlay .post-meta {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 24px;
+    display: flex; gap: 16px;
+  }
+  #post-overlay .post-meta .sep { color: var(--ink-soft); }
+  #post-overlay .post-meta .read { color: var(--ink-soft); }
+  #post-overlay .post-title {
+    font-family: "Reckless", serif;
+    font-weight: 400;
+    font-size: clamp(38px, 5vw, 60px);
+    line-height: 1;
+    letter-spacing: -.015em;
+    margin-bottom: 18px;
+  }
+  #post-overlay .post-title em { color: var(--accent); font-style: italic; }
+  #post-overlay .post-dek {
+    font-family: "Newsreader", serif;
+    font-style: italic;
+    font-size: 20px;
+    line-height: 1.45;
+    color: var(--ink-soft);
+    margin-bottom: 36px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--rule);
+    max-width: 50ch;
+  }
+  #post-overlay .post-body {
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--ink);
+  }
+  #post-overlay .post-body p { margin-bottom: 1.1em; }
+  #post-overlay .post-body p + p { text-indent: 1.4em; margin-bottom: 1.1em; }
+  #post-overlay .post-body p:first-of-type { text-indent: 0; }
+  #post-overlay .post-body p:first-of-type::first-letter {
+    font-family: "Reckless", serif;
+    font-style: italic;
+    color: var(--accent);
+    font-size: 4.6em;
+    line-height: .82;
+    float: left;
+    padding: 6px 12px 0 0;
+  }
+  #post-overlay .post-body h2 {
+    font-family: "Reckless", serif;
+    font-weight: 400;
+    font-size: 28px;
+    line-height: 1.1;
+    margin: 2em 0 .6em;
+    color: var(--ink);
+    letter-spacing: -.005em;
+  }
+  #post-overlay .post-body blockquote {
+    margin: 1.8em 0;
+    padding-left: 24px;
+    border-left: 2px solid var(--accent);
+    font-style: italic;
+    color: var(--ink);
+    font-size: 1.05em;
+    line-height: 1.5;
+  }
+  #post-overlay .post-body em { font-style: italic; }
+  #post-overlay .post-body strong { font-weight: 700; }
+  #post-overlay .post-body a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+  #post-overlay .post-body code {
+    font-family: "Geist Mono", monospace;
+    background: var(--paper-2);
+    padding: 1px 6px;
+    border: 1px solid var(--rule);
+    font-size: .85em;
+  }
+  #post-overlay .post-body pre {
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 1.2em 0;
+    font-family: "Geist Mono", monospace;
+    font-size: .85em;
+  }
+  #post-overlay .post-body pre code { background: none; border: none; padding: 0; }
+  #post-overlay .post-footer {
+    margin-top: 56px;
+    padding-top: 24px;
+    border-top: 1px solid var(--rule);
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-family: "Geist Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  #post-overlay .post-footer .back {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 8px 14px;
+    border: none;
+    cursor: pointer;
+    font: inherit;
+    text-transform: inherit;
+    letter-spacing: inherit;
+    transition: background .2s;
+  }
+  #post-overlay .post-footer .back:hover { background: var(--accent); }
+
+  @media (max-width: 700px) {
+    #post-overlay .post-inner { padding: 40px 24px 80px; }
+    #post-overlay .post-title { font-size: 36px; }
+  }
+</style>
+
+<script>
+  const postOverlay = document.getElementById('post-overlay')!;
+  const postSheet = document.getElementById('post-sheet')!;
+  const postInner = document.getElementById('post-inner')!;
+  const postCrumb = document.getElementById('post-crumb')!;
+  let activePostId: string | null = null;
+  const BRAND = 'David Lohle';
+
+  // Deep-link routes — /writing/<slug>. Each published post has its own
+  // route (generated by src/pages/writing/[slug].astro) that re-renders the
+  // canvas; on load we read the URL and auto-open the matching post.
+  // Opening / closing a post pushes a fresh history entry so back/forward
+  // moves between the post overlay and the writing list naturally.
+  function slugFromPath(): string | null {
+    const m = location.pathname.match(/^\/writing\/([^/]+)\/?$/);
+    return m ? m[1] : null;
+  }
+
+  function openPost(id: string, opts: { pushHistory?: boolean } = {}) {
+    const tpl = document.querySelector<HTMLTemplateElement>(`template[data-post-id="${id}"]`);
+    if (!tpl) return;
+    activePostId = id;
+    const title = tpl.dataset.title ?? '';
+    const crumb = tpl.dataset.crumb ?? '';
+    const date = tpl.dataset.date ?? '';
+    const read = tpl.dataset.read ?? '';
+    const dek = tpl.dataset.dek ?? '';
+    postCrumb.textContent = crumb;
+    postInner.innerHTML = `
+      <div class="post-meta">
+        <span>${date}</span><span class="sep">·</span>
+        <span class="read">${read}</span><span class="sep">·</span>
+        <span>By ${BRAND}</span>
+      </div>
+      <h1 class="post-title">${title}</h1>
+      ${dek ? `<p class="post-dek">${dek}</p>` : ''}
+      <div class="post-body"></div>
+      <div class="post-footer">
+        <button class="back" type="button" id="post-back">← Back to canvas</button>
+        <span>EOF · Thanks for reading</span>
+      </div>
+    `;
+    const bodyEl = postInner.querySelector('.post-body')!;
+    bodyEl.appendChild(tpl.content.cloneNode(true));
+    postOverlay.classList.add('open');
+    postOverlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => { postSheet.scrollTop = 0; });
+    document.getElementById('post-back')?.addEventListener('click', () => closePost());
+
+    document.title = `${crumb} · ${BRAND}`;
+    if (opts.pushHistory !== false) {
+      const target = `/writing/${id}`;
+      if (location.pathname.replace(/\/$/, '') !== target) {
+        history.pushState({ post: id }, '', target);
+      }
+    }
+  }
+
+  function closePost(opts: { pushHistory?: boolean } = {}) {
+    if (!activePostId) return;
+    postOverlay.classList.remove('open');
+    postOverlay.setAttribute('aria-hidden', 'true');
+    activePostId = null;
+    if (opts.pushHistory !== false && location.pathname.startsWith('/writing/')) {
+      history.pushState({}, '', '/writing');
+    }
+    document.title = `Writing · ${BRAND}`;
+  }
+
+  document.querySelectorAll<HTMLElement>('#m-writing .post[data-post-id]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.postId;
+      if (id) openPost(id);
+    });
+  });
+  document.getElementById('post-close')!.addEventListener('click', () => closePost());
+  document.querySelector('.post-backdrop')!.addEventListener('click', () => closePost());
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && activePostId) closePost();
+  });
+
+  // Back/forward navigation between /writing, /writing/<slug>, and other
+  // routes. We don't push more history here — we're reacting to the URL,
+  // not driving it.
+  window.addEventListener('popstate', () => {
+    const slug = slugFromPath();
+    if (slug) {
+      if (activePostId !== slug) openPost(slug, { pushHistory: false });
+    } else if (activePostId) {
+      closePost({ pushHistory: false });
+    }
+  });
+
+  // Nav buttons (Home / About / Writing / …) dispatch this when they change
+  // the URL — close the post overlay so the canvas isn't behind a stale post.
+  window.addEventListener('navigate-section', () => {
+    if (activePostId) closePost({ pushHistory: false });
+  });
+
+  // On hard load, auto-open the post if the URL is /writing/<slug>.
+  const initSlug = slugFromPath();
+  if (initSlug) {
+    requestAnimationFrame(() => openPost(initSlug, { pushHistory: false }));
+  }
+</script>

@@ -1,0 +1,226 @@
+---
+import { Image } from 'astro:assets';
+import type { CollectionEntry } from 'astro:content';
+
+type RenderedPhoto = {
+  photo: CollectionEntry<'photos'>;
+  Content: import('astro').ComponentInstance['default'] | any;
+  hasBody: boolean;
+  fullDate: string;
+};
+
+interface Props {
+  renderedPhotos: RenderedPhoto[];
+}
+
+const { renderedPhotos } = Astro.props;
+---
+
+{/* Photo lightbox: centered modal with high-res image + optional caption
+    and markdown body. Markup is empty until openPhoto(id) populates it
+    from the matching <template data-photo-modal-id="..."> below. */}
+<div id="photo-overlay" aria-hidden="true">
+  <div class="photo-backdrop"></div>
+  <div class="photo-sheet" id="photo-sheet">
+    <button class="photo-close" id="photo-close" type="button" aria-label="Close">×</button>
+    <div class="photo-media" id="photo-media"></div>
+    <div class="photo-meta" id="photo-meta"></div>
+  </div>
+</div>
+
+{renderedPhotos.map(({ photo, Content, hasBody, fullDate }) => (
+  <template
+    data-photo-modal-id={photo.id}
+    data-caption={photo.data.caption}
+    data-location={photo.data.location ?? ''}
+    data-date={fullDate}
+  >
+    {photo.data.image && (
+      <Image
+        src={photo.data.image}
+        alt={photo.data.caption}
+        widths={[800, 1200, 1800]}
+        sizes="(max-width: 700px) 95vw, 80vw"
+      />
+    )}
+    {hasBody && <div class="photo-modal-body"><Content /></div>}
+  </template>
+))}
+
+{/*
+  PHOTO LIGHTBOX styles — kept global because the inner image + markdown body
+  is cloned from a <template> via innerHTML, so it never receives Astro's
+  data-astro-cid scope attribute.
+*/}
+<style is:global>
+  #photo-overlay {
+    position: fixed; inset: 0;
+    z-index: 160;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .25s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #photo-overlay.open { pointer-events: auto; opacity: 1; }
+  #photo-overlay .photo-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(26, 22, 18, .55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #photo-overlay .photo-sheet {
+    position: relative;
+    z-index: 1;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    width: min(1400px, 95vw);
+    height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 24px 60px rgba(40, 30, 20, .35);
+    transform: scale(.96);
+    transition: transform .25s ease;
+    overflow: hidden;
+  }
+  #photo-overlay.open .photo-sheet { transform: scale(1); }
+  #photo-overlay .photo-close {
+    position: absolute;
+    top: 10px; right: 10px;
+    z-index: 2;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    font-family: "Reckless", serif;
+    font-size: 22px;
+    line-height: 1;
+    transition: background .2s;
+  }
+  #photo-overlay .photo-close:hover { background: var(--accent); }
+  #photo-overlay .photo-media {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--paper-2);
+    min-height: 0;
+    min-width: 0;
+    padding: 24px;
+    overflow: hidden;
+  }
+  #photo-overlay .photo-media img {
+    /* max-* with intrinsic auto sizing reliably letterboxes portrait OR
+       landscape photos within the available area without cropping, and
+       sidesteps the percentage-vs-intrinsic-size ambiguity that bit us
+       when the media container was a CSS grid. */
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: auto;
+    display: block;
+  }
+  #photo-overlay .photo-meta {
+    flex: 0 0 auto;
+    padding: 20px 28px 24px;
+    border-top: 1px solid var(--rule);
+    font-family: "Newsreader", serif;
+  }
+  #photo-overlay .photo-meta:empty { display: none; }
+  #photo-overlay .photo-meta h2 {
+    font-family: "Reckless", serif;
+    font-weight: 400;
+    font-size: clamp(22px, 2.4vw, 32px);
+    line-height: 1.15;
+    letter-spacing: -.005em;
+    margin-bottom: 6px;
+  }
+  #photo-overlay .photo-meta .photo-info {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+  }
+  #photo-overlay .photo-modal-body {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+  #photo-overlay .photo-modal-body p { margin-bottom: 0.8em; }
+  #photo-overlay .photo-modal-body p:last-child { margin-bottom: 0; }
+
+  @media (max-width: 700px) {
+    #photo-overlay .photo-sheet { width: 95vw; height: 95vh; }
+    #photo-overlay .photo-media { padding: 12px; }
+    #photo-overlay .photo-meta { padding: 16px 18px 20px; }
+  }
+</style>
+
+<script>
+  const photoOverlay = document.getElementById('photo-overlay')!;
+  const photoMedia = document.getElementById('photo-media')!;
+  const photoMeta = document.getElementById('photo-meta')!;
+  let activePhotoId: string | null = null;
+
+  function escapePhoto(s: string): string {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function openPhoto(id: string) {
+    const tpl = document.querySelector<HTMLTemplateElement>(
+      `template[data-photo-modal-id="${id}"]`,
+    );
+    if (!tpl) return;
+    activePhotoId = id;
+    const caption = tpl.dataset.caption ?? '';
+    const location = tpl.dataset.location ?? '';
+    const date = tpl.dataset.date ?? '';
+    const info = [location, date].filter(Boolean).join(' · ');
+
+    // Template content is [<img>, optional <div class="photo-modal-body">].
+    // Pull the body aside so the image lives in .photo-media and the body
+    // sits below the caption inside .photo-meta.
+    const cloned = tpl.content.cloneNode(true) as DocumentFragment;
+    const bodyEl = cloned.querySelector('.photo-modal-body');
+    if (bodyEl) bodyEl.remove();
+    photoMedia.innerHTML = '';
+    photoMedia.appendChild(cloned);
+
+    photoMeta.innerHTML = `
+      <h2>${escapePhoto(caption)}</h2>
+      ${info ? `<div class="photo-info">${escapePhoto(info)}</div>` : ''}
+    `;
+    if (bodyEl) photoMeta.appendChild(bodyEl);
+
+    photoOverlay.classList.add('open');
+    photoOverlay.setAttribute('aria-hidden', 'false');
+  }
+
+  function closePhoto() {
+    photoOverlay.classList.remove('open');
+    photoOverlay.setAttribute('aria-hidden', 'true');
+    activePhotoId = null;
+  }
+
+  // Strip photos in #m-photo open the lightbox; framed canvas-photos do too
+  // (polaroids stay non-clickable on purpose — they're decorative).
+  document.querySelectorAll<HTMLElement>(
+    '#m-photo .ph[data-photo-id], .canvas-photo.framed[data-photo-id]',
+  ).forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.photoId;
+      if (id) openPhoto(id);
+    });
+  });
+  document.getElementById('photo-close')!.addEventListener('click', closePhoto);
+  document.querySelector('#photo-overlay .photo-backdrop')!.addEventListener('click', closePhoto);
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && activePhotoId) closePhoto();
+  });
+</script>
