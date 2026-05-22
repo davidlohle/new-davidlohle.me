@@ -1,0 +1,60 @@
+welcome:
+  x: 3763
+  y: 2903
+  rotation: 4
+  color: "#f3c40c"
+  body: >-
+    <b>Welcome my canvas.</b><br>Everything is laid out in space. Drag to roam, scroll to zoom, or use the nav up top to
+    teleport.
+  z: 2
+sticky-notes-meta:
+  x: 2300
+  y: 2600
+  rotation: -5
+  color: "#d97947"
+  body: currently planning a wedding, please send any info/tips to help@davidlohle.me :)
+  z: 2
+pro-tip:
+  x: 4677
+  y: 2205
+  rotation: -1
+  color: "#fffdf6"
+  body: <b>Tip:</b> press <b>0</b> to reset the view if you get lost.
+  z: 2
+sticky-mphneeon:
+  x: 470
+  y: 1292
+  rotation: -5
+  color: "#d97947"
+  body: This is one of a few custom expansions, which includes a meta-pile (similar to Knights) of cocktails.
+  z: 4
+sticky-mphnqa7f:
+  x: 679
+  y: 819
+  rotation: 3
+  color: "#b8d8a8"
+  body: Full card art was a really important UI decision for me; other online variants only offer chopped-off editions.
+  z: 3
+sticky-mphos5aa:
+  x: 1919
+  y: 706
+  rotation: -1
+  color: "#a8c8e8"
+  body: Competitive games use OpenSkill for rank ratings, leveraging the PluckettLuce aglorithm
+  z: 2
+sticky-mphospr6:
+  x: 1873
+  y: 936
+  rotation: 0
+  color: "#f4a8b8"
+  body: >-
+    Achievements for common, rare, or challenges. They award points, which are exchangeable at an in-game shop for
+    player profile cosmetics or custom SFX that fires when marquee cards are purchased during gameplay.
+  z: 2
+sticky-mphovena:
+  x: 2183
+  y: 1349
+  rotation: -4
+  color: "#f3c40c"
+  body: "An achievement for an in-house rule: VP ties are solved via a coin toss if both players accept. "
+  z: 3

@@ -1,0 +1,40 @@
+about-me-arrow:
+  kind: curly-arrow
+  x: 5050
+  y: 2759
+  width: 300
+  height: 315
+  rotation: 90
+  z: 1
+honest-schedule-arrow:
+  kind: basic-arrow
+  x: 4760
+  y: 1770
+  width: 380
+  height: 242
+  rotation: 0
+  z: 1
+arrow-mphcyppv:
+  kind: squiggle-arrow
+  x: 2551
+  y: 2780
+  width: 297
+  height: 302
+  rotation: -180
+  z: 1
+arrow-mphorat9:
+  kind: swoop-arrow
+  x: 1719
+  y: 637
+  width: 171
+  height: 245
+  rotation: -132
+  z: 3
+arrow-mphorn7n:
+  kind: short-arrow
+  x: 1707
+  y: 941
+  width: 147
+  height: 197
+  rotation: -136
+  z: 5
