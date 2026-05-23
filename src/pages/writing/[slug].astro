@@ -1,0 +1,17 @@
+---
+// Per-post deep-link routes — /writing/<slug>. Each published blog post gets
+// a static HTML page. Same trick as [section].astro: we import index.astro
+// and let Astro.url.pathname inside it pick up the slug for SEO + initial
+// overlay open. The PostOverlay's client script reads the URL on init and
+// auto-opens the matching post.
+import { getCollection } from 'astro:content';
+import Index from '../index.astro';
+
+export async function getStaticPaths() {
+  const posts = (await getCollection('blog', (p) => !p.data.draft)).sort(
+    (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+  );
+  return posts.map((post) => ({ params: { slug: post.id } }));
+}
+---
+<Index />

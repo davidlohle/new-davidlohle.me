@@ -1,0 +1,21 @@
+---
+// Deep-link routes — /about, /now, /photo, /projects, /writing, /contact.
+// Each renders the same canvas as `/`; the client-side viewport script reads
+// `location.pathname` on load and pans to the matching module. No content
+// duplication — we import index.astro and let Astro emit a copy of the page
+// at each route. Astro.url.pathname inside the inner page reflects this
+// route, which is how the section <title> + description are picked.
+import Index from './index.astro';
+
+export function getStaticPaths() {
+  return [
+    { params: { section: 'about' } },
+    { params: { section: 'now' } },
+    { params: { section: 'photo' } },
+    { params: { section: 'projects' } },
+    { params: { section: 'writing' } },
+    { params: { section: 'contact' } },
+  ];
+}
+---
+<Index />

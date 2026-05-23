@@ -1,0 +1,122 @@
+---
+import { site } from '../config/site';
+import '../styles/tokens.css';
+---
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>404 · {site.brand.name}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f1ead7">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" as="font" href="/fonts/DavidFontFelt.otf" type="font/otf" crossorigin>
+<link rel="preload" as="font" href="/fonts/DavidFontInk.otf" type="font/otf" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    background:
+      radial-gradient(ellipse at center, transparent 0%, rgba(26,22,18,.06) 100%),
+      var(--paper);
+    color: var(--ink);
+    display: grid;
+    place-items: center;
+    user-select: none;
+    position: relative;
+  }
+  /* Wandering dot grid: two layers translate along separate slow, non-linear
+     paths so the field never repeats visibly. Each layer is over-sized via
+     negative inset so the edges of the translation never reveal a seam. */
+  .dots {
+    position: fixed;
+    inset: -120px;
+    background-image: radial-gradient(rgba(26,22,18,.16) 1.7px, transparent 1.7px);
+    background-size: 36px 36px;
+    background-position: 18px 18px;
+    pointer-events: none;
+    z-index: 0;
+    animation: wander-a 38s ease-in-out infinite;
+    will-change: transform;
+  }
+  .dots.two {
+    background-image: radial-gradient(rgba(107,42,62,.10) 1.4px, transparent 1.4px);
+    background-size: 54px 54px;
+    background-position: 27px 27px;
+    animation: wander-b 53s ease-in-out infinite;
+  }
+  @keyframes wander-a {
+    0%   { transform: translate(0, 0); }
+    18%  { transform: translate(28px, -22px); }
+    34%  { transform: translate(-14px, 30px); }
+    52%  { transform: translate(36px, 12px); }
+    70%  { transform: translate(-22px, -18px); }
+    86%  { transform: translate(8px, 26px); }
+    100% { transform: translate(0, 0); }
+  }
+  @keyframes wander-b {
+    0%   { transform: translate(0, 0); }
+    22%  { transform: translate(-26px, 18px); }
+    44%  { transform: translate(18px, -28px); }
+    66%  { transform: translate(-32px, -12px); }
+    82%  { transform: translate(24px, 22px); }
+    100% { transform: translate(0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dots, .dots.two { animation: none; }
+  }
+  main { position: relative; z-index: 1; }
+  main {
+    text-align: center;
+    padding: 24px;
+    max-width: 720px;
+  }
+  .big {
+    font-family: "David Felt", cursive;
+    color: var(--accent);
+    font-size: clamp(180px, 32vw, 360px);
+    line-height: .9;
+    letter-spacing: -.02em;
+    margin: 0;
+  }
+  .msg {
+    font-family: "David Ink", cursive;
+    color: var(--ink);
+    font-size: clamp(40px, 7vw, 72px);
+    line-height: 1.05;
+    margin-top: 8px;
+    transform: rotate(-1deg);
+    transform-origin: center;
+  }
+  .back {
+    display: inline-block;
+    margin-top: 28px;
+    font-family: "Geist Mono", monospace;
+    font-size: 12px;
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+    padding: 10px 16px;
+    background: var(--paper);
+    transition: background .2s, color .2s;
+  }
+  .back:hover { background: var(--ink); color: var(--paper); }
+</style>
+</head>
+<body>
+<div class="dots" aria-hidden="true"></div>
+<div class="dots two" aria-hidden="true"></div>
+<main>
+  <h1 class="big">404</h1>
+  <p class="msg">How'd we get here?</p>
+  <a href="/" class="back">← Back to the canvas</a>
+</main>
+</body>
+</html>
