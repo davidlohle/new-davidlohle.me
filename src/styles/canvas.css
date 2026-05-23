@@ -1,0 +1,355 @@
+/* The 5000×3600 spatial canvas: viewport (fixed), world (transformed),
+   the generic .mod card, and each named module's interior styling. */
+
+/* viewport */
+#viewport {
+  position: fixed; inset: 0;
+  cursor: grab;
+  background:
+    radial-gradient(ellipse at center, transparent 0%, rgba(26,22,18,.06) 100%),
+    var(--paper);
+  overflow: hidden;
+}
+#viewport.grabbing { cursor: grabbing; }
+
+/* world (transformed). Dimensions must stay in sync with WORLD_W/H in
+   src/canvas/viewport.ts — the minimap scales by those constants. */
+#world {
+  position: absolute;
+  top: 0; left: 0;
+  width: 8000px; height: 5400px;
+  transform-origin: 0 0;
+  transition: transform .8s cubic-bezier(.4, .0, .2, 1);
+  will-change: transform;
+}
+#world.grabbing { transition: none; }
+
+/* dot grid */
+#world::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(26,22,18,.15) 1.7px, transparent 1.7px);
+  background-size: 36px 36px;
+  background-position: 18px 18px;
+  pointer-events: none;
+}
+/* compass — value supplied via inline style="--compass: '...'" on #world */
+#world::after {
+  content: var(--compass);
+  position: absolute;
+  bottom: 80px; right: 120px;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(26,22,18,.3);
+  pointer-events: none;
+}
+
+/* generic module */
+.mod {
+  position: absolute;
+  background: #fffdf6;
+  border: 1px solid var(--ink);
+  box-shadow: var(--shadow);
+  padding: 26px 28px;
+  transition: transform .25s, box-shadow .25s;
+}
+.mod .pin {
+  position: absolute;
+  top: -10px; left: 18px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+}
+.mod .pin.accent { background: var(--accent); }
+.mod h2 {
+  font-family: "Reckless", serif;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -.01em;
+  margin-bottom: 14px;
+}
+.mod h2 em { color: var(--accent); }
+.mod p { font-size: 15px; color: var(--ink); line-height: 1.55; }
+.mod p + p { margin-top: .9em; }
+.mod .meta {
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+  margin-top: 16px;
+}
+
+/* HERO — position/width applied inline from src/data/modules.yml */
+#m-hero {
+  background: transparent;
+  border: none; box-shadow: none;
+  padding: 0;
+  text-align: center;
+}
+#m-hero .yo {
+  font-family: "David Felt", cursive;
+  color: var(--accent);
+  font-size: 64px;
+  line-height: 1;
+  display: inline-block;
+  margin-bottom: 24px;
+}
+#m-hero h1 {
+  font-family: "David Ink", cursive;
+  font-weight: 400;
+  font-size: 180px;
+  line-height: .92;
+  letter-spacing: -.02em;
+}
+#m-hero h1 .verb {
+  font-style: italic;
+  display: inline-block;
+  transition: transform .35s cubic-bezier(.2,.7,.2,1), opacity .35s;
+}
+#m-hero h1 .strike { color: var(--ink-soft); }
+#m-hero h1 .correction {
+  font-family: "David Ink", cursive;
+  color: var(--accent);
+  font-size: 0.7em;
+  letter-spacing: normal;
+  margin-left: 0.15em;
+  display: inline-block;
+  transform: rotate(-2deg);
+  transform-origin: left center;
+  line-height: 1;
+  vertical-align: 0.12em;
+}
+#m-hero .sub {
+  margin-top: 36px;
+  font-family: "Geist Mono", monospace;
+  font-size: 24px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+#m-hero .sub .dot { color: var(--accent); }
+
+/* ABOUT */
+#m-about h2 { font-size: 56px; }
+
+/* NOW */
+#m-now { background: var(--ink); color: var(--paper); }
+#m-now .pin { background: var(--accent); }
+#m-now h2 { font-size: 52px; color: #fff; }
+#m-now h2 em { color: var(--accent-2); }
+#m-now p { color: var(--paper); }
+#m-now ul { list-style: none; display: grid; gap: 10px; margin-top: 10px; }
+#m-now li {
+  display: grid; grid-template-columns: 100px 1fr;
+  gap: 16px; align-items: baseline;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(241, 234, 215, .25);
+  font-size: 15px; line-height: 1.35;
+}
+#m-now li:last-child { border-bottom: none; }
+#m-now li .k {
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+#m-now li em { font-family: "Newsreader", serif; font-style: italic; color: var(--accent-2); }
+
+/* PHOTOGRAPHY */
+#m-photo h2 { font-size: 48px; }
+#m-photo .strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+#m-photo .ph {
+  /* reset <button> defaults so the tile inherits canvas typography/color */
+  appearance: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  aspect-ratio: 4/5;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 16px, rgba(26,22,18,.05) 16px 17px),
+    var(--paper-2);
+  position: relative;
+  cursor: pointer;
+  border: 1px solid var(--ink);
+  transition: transform .25s;
+  overflow: hidden;
+}
+#m-photo .ph:hover { transform: translateY(-2px); }
+#m-photo .ph img {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+#m-photo .ph .cap {
+  position: absolute;
+  left: 6px; bottom: 6px;
+  font-family: "Newsreader", serif;
+  font-style: italic;
+  font-size: 12px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 1px 6px;
+  line-height: 1.2;
+  z-index: 1;
+}
+
+/* PROJECTS */
+#m-projects h2 { font-size: 56px; }
+#m-projects .grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  margin-top: 18px;
+}
+#m-projects .proj {
+  /* reset <button> defaults so the tile inherits canvas typography */
+  appearance: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  display: block;
+  width: 100%;
+  padding: 16px 18px 18px;
+  border: 1px solid var(--ink);
+  cursor: pointer;
+  transition: background .25s, transform .25s;
+  background: var(--paper);
+}
+#m-projects .proj:hover { background: var(--paper-2); transform: translateY(-2px); }
+#m-projects .proj .top {
+  display: flex; justify-content: space-between;
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  letter-spacing: .08em;
+}
+#m-projects .proj .top b { color: var(--accent); font-weight: 500; }
+#m-projects .proj h3 {
+  font-family: "Reckless", serif;
+  font-weight: 400;
+  font-size: 26px;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+#m-projects .proj h3 em { color: var(--accent); }
+#m-projects .proj small {
+  font-size: 13px; color: var(--ink-soft);
+  line-height: 1.4;
+  display: block;
+}
+
+/* WRITING */
+#m-writing h2 { font-size: 56px; }
+#m-writing .post {
+  /* reset <button> defaults so the row inherits the canvas typography */
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 56px 1fr 80px;
+  gap: 14px;
+  padding: 12px 0;
+  align-items: baseline;
+  cursor: pointer;
+  transition: padding-left .2s;
+}
+#m-writing .post:active { transform: translateY(1px); }
+#m-writing .post:hover { padding-left: 12px; }
+#m-writing .post:hover h3 { color: var(--accent); }
+#m-writing .post .num {
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: .1em;
+}
+#m-writing .post h3 {
+  font-family: "Reckless", serif;
+  font-weight: 400;
+  font-size: 22px;
+  line-height: 1.1;
+  letter-spacing: -.005em;
+  transition: color .2s;
+}
+#m-writing .post h3 em { color: var(--accent); }
+#m-writing .post .date {
+  font-family: "Geist Mono", monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  text-align: right;
+  letter-spacing: .1em;
+}
+
+/* CONTACT */
+#m-contact { background: var(--accent); color: var(--paper); }
+#m-contact .pin { background: var(--ink); color: var(--paper); }
+#m-contact h2 { font-size: 64px; color: var(--paper); }
+#m-contact h2 em { color: var(--paper); font-style: italic; opacity: .9; }
+#m-contact p { color: var(--paper); }
+#m-contact .actions { margin-top: 22px; display: flex; gap: 10px; flex-wrap: wrap; }
+#m-contact .btn {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  padding: 10px 16px;
+  font-family: "Geist Mono", monospace;
+  font-size: 12px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+#m-contact .btn:hover { background: var(--ink); color: var(--paper); }
+
+/* Mobile — module interiors are tuned for desktop widths (580–2400px);
+   at ~340px wide we need smaller display type and tighter grids. */
+@media (max-width: 700px) {
+  /* Block native pinch/scroll inside the viewport so our pan handler owns the gesture. */
+  #viewport { touch-action: none; }
+
+  .mod { padding: 20px 22px; }
+  .mod h2 { font-size: 36px; line-height: 1; }
+  .mod p { font-size: 14px; }
+
+  #m-hero .yo { font-size: 36px; margin-bottom: 14px; }
+  #m-hero h1 { font-size: 46px; line-height: .96; }
+  #m-hero .sub { font-size: 12px; margin-top: 20px; }
+
+  #m-about h2 { font-size: 36px; }
+
+  #m-now h2 { font-size: 34px; }
+  #m-now li { grid-template-columns: 72px 1fr; gap: 12px; font-size: 14px; }
+
+  #m-photo h2 { font-size: 32px; }
+  #m-photo .strip { grid-template-columns: repeat(3, 1fr); }
+
+  #m-projects h2 { font-size: 34px; }
+  #m-projects .grid { grid-template-columns: 1fr; gap: 10px; margin-top: 14px; }
+  #m-projects .proj h3 { font-size: 22px; }
+
+  #m-writing h2 { font-size: 34px; }
+  #m-writing .post { grid-template-columns: 1fr 70px; gap: 10px; }
+  #m-writing .post .num { display: none; }
+  #m-writing .post h3 { font-size: 19px; }
+
+  #m-contact h2 { font-size: 36px; }
+  #m-contact .actions { margin-top: 16px; gap: 8px; }
+  #m-contact .btn { padding: 8px 12px; font-size: 11px; }
+}

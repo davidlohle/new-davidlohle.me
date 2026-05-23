@@ -1,0 +1,60 @@
+/* Design tokens, fonts, universal reset, and base typography utilities.
+   Imported once from src/pages/index.astro frontmatter — emitted as a
+   global stylesheet by Vite, so these rules apply across the page and
+   inside global <style is:global> blocks. */
+
+@font-face {
+  font-family: "Reckless";
+  src: url("/fonts/RecklessStandardXL-Regular.woff2") format("woff2"),
+       url("/fonts/RecklessStandardXL-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Reckless";
+  src: url("/fonts/RecklessStandardXL-RegularItalic.woff2") format("woff2"),
+       url("/fonts/RecklessStandardXL-RegularItalic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "David Ink";
+  src: url("/fonts/DavidFontInk.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "David Felt";
+  src: url("/fonts/DavidFontFelt.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --paper: #f1ead7;
+  --paper-2: #ebe1c4;
+  --ink: #1a1612;
+  --ink-soft: #4d4338;
+  --rule: #1a16121a;
+  --accent: #6b2a3e;
+  --accent-2: #a05468;
+  --shadow: 0 2px 0 rgba(0,0,0,.04), 0 12px 30px rgba(40, 30, 20, .12), 0 1px 3px rgba(40, 30, 20, .15);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--paper); color: var(--ink); overflow: hidden; }
+body {
+  font-family: "Geist", -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+.mono { font-family: "Geist Mono", monospace; }
+.serif { font-family: "Reckless", serif; }
+.news { font-family: "Newsreader", serif; }
+a { color: inherit; text-decoration: none; }

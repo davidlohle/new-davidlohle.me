@@ -1,0 +1,179 @@
+/* Fixed UI chrome that sits above the canvas: topbar (brand + nav),
+   bottom-left zoom controls, bottom-right minimap, centered welcome hint. */
+
+.topbar {
+  position: fixed; top: 16px; left: 16px; right: 16px;
+  display: flex; justify-content: space-between; align-items: center;
+  pointer-events: none;
+  z-index: 50;
+}
+.topbar > * { pointer-events: auto; }
+.brand {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 8px 14px;
+  font-family: "Reckless", serif;
+  font-size: 22px;
+  line-height: 1;
+  box-shadow: var(--shadow);
+}
+.brand .dot { color: var(--accent); }
+.brand small {
+  display: block;
+  font-family: "Geist Mono", monospace;
+  font-size: 9px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-top: 3px;
+}
+.topbar .nav {
+  display: flex; gap: 6px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 4px;
+  box-shadow: var(--shadow);
+}
+.topbar .nav button {
+  background: transparent;
+  border: none;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  transition: background .2s, color .2s;
+  border-radius: 0;
+}
+.topbar .nav button:hover { background: var(--paper-2); color: var(--ink); }
+.topbar .nav button.active { background: var(--ink); color: var(--paper); }
+.topbar .nav button.active .dot { color: var(--accent-2); }
+
+.controls {
+  position: fixed; bottom: 16px; left: 16px;
+  display: flex; gap: 8px; align-items: center;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 6px;
+  box-shadow: var(--shadow);
+  z-index: 50;
+  font-family: "Geist Mono", monospace;
+  font-size: 11px;
+}
+.controls button {
+  background: transparent;
+  border: none;
+  width: 30px; height: 30px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+  transition: background .2s;
+}
+.controls button:hover { background: var(--paper-2); }
+.controls .zoom {
+  min-width: 50px; text-align: center;
+  border-left: 1px solid var(--rule);
+  border-right: 1px solid var(--rule);
+  padding: 0 10px;
+  height: 30px; line-height: 30px;
+  color: var(--ink-soft);
+  letter-spacing: .04em;
+}
+.controls .reset {
+  border-left: 1px solid var(--rule);
+  padding: 0 10px;
+  height: 30px; line-height: 30px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  letter-spacing: .1em;
+}
+.controls .reset:hover { color: var(--accent); }
+
+.minimap {
+  position: fixed; bottom: 16px; right: 16px;
+  width: 240px; height: 170px;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: var(--shadow);
+  z-index: 50;
+  overflow: hidden;
+}
+.minimap .mini-world {
+  position: absolute;
+  inset: 0;
+  background: var(--paper-2);
+}
+/* .mini-mod and .frame are created in JS at runtime, so they don't get
+   Astro's scope attribute. This stylesheet is already global, so they
+   inherit cleanly — no :global() wrapper needed. */
+.minimap .mini-mod {
+  position: absolute;
+  background: var(--ink);
+  opacity: .35;
+}
+.minimap .mini-mod.hero { background: var(--accent); opacity: .7; }
+.minimap .mini-mod.aux { background: var(--ink-soft); opacity: .55; }
+.minimap .frame {
+  position: absolute;
+  border: 1.5px solid var(--accent);
+  background: rgba(183, 58, 42, .12);
+  pointer-events: none;
+}
+.minimap .label {
+  position: absolute;
+  top: 4px; left: 6px;
+  font-family: "Geist Mono", monospace;
+  font-size: 9px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  z-index: 2;
+  background: var(--paper);
+  padding: 1px 4px;
+  border: 1px solid var(--rule);
+}
+.minimap .coord {
+  position: absolute;
+  bottom: 4px; right: 6px;
+  font-family: "Geist Mono", monospace;
+  font-size: 9px;
+  color: var(--ink-soft);
+  background: var(--paper);
+  padding: 1px 4px;
+  border: 1px solid var(--rule);
+  z-index: 2;
+}
+
+.welcome {
+  position: fixed;
+  left: 50%; bottom: 32px;
+  transform: translateX(-50%);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 12px 22px;
+  font-family: "Geist Mono", monospace;
+  font-size: 12px;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  z-index: 60;
+  animation: floatUp 3s ease-in-out infinite;
+  pointer-events: none;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity .8s;
+}
+.welcome.show { opacity: 1; }
+.welcome .accent { color: var(--accent-2); margin: 0 8px; }
+@keyframes floatUp {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-6px); }
+}
+
+@media (max-width: 700px) {
+  .topbar .nav { display: none; }
+  .controls { display: none; }
+  .minimap { display: none; }
+  .welcome { display: none; }
+}
