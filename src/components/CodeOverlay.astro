@@ -1,0 +1,262 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { Code } from 'astro:components';
+
+interface Props {
+  codeblocks: CollectionEntry<'codeblocks'>[];
+}
+
+const { codeblocks } = Astro.props;
+
+// Shiki accepts a broad set of language names; anything unknown falls back to
+// plain text. Cast through `any` so we don't have to keep a closed enum in lockstep.
+type ShikiLang = Parameters<typeof Code>[0]['lang'];
+---
+
+{/* Code overlay — slide-in panel that opens when a `.codeblock` is clicked.
+    Markup is empty until openCodeblock(id) populates it from the matching
+    <template data-codeblock-id="..."> below. */}
+<div id="code-overlay" aria-hidden="true">
+  <div class="code-backdrop"></div>
+  <article class="code-sheet" id="code-sheet">
+    <header class="code-topbar">
+      <div class="crumbs"><span>Snippet</span><span class="sep">·</span><b id="code-lang">—</b></div>
+      <button class="code-close" id="code-close" type="button" aria-label="Close">×</button>
+    </header>
+    <div class="code-inner" id="code-inner"></div>
+  </article>
+</div>
+
+{/* Pre-rendered code blocks. Shiki runs at build time, producing the styled
+    <pre>...</pre>. <template> stays inert until clone time. */}
+{codeblocks.map((c) => (
+  <template
+    data-codeblock-id={c.id}
+    data-title={c.data.title ?? ''}
+    data-label={c.data.label ?? ''}
+    data-dek={c.data.dek ?? ''}
+    data-language={c.data.language}
+  >
+    <Code code={c.data.code} lang={c.data.language as ShikiLang} theme="github-dark" />
+  </template>
+))}
+
+{/*
+  CODE OVERLAY styles — global because the inner content (.code-title etc.)
+  and Shiki's generated <pre> are cloned at runtime from <template>, so they
+  never carry Astro's data-astro-cid scope attribute.
+*/}
+<style is:global>
+  #code-overlay {
+    position: fixed; inset: 0;
+    z-index: 150;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .35s ease;
+  }
+  #code-overlay.open {
+    pointer-events: auto;
+    opacity: 1;
+  }
+  #code-overlay .code-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(241, 234, 215, .55);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  #code-overlay .code-sheet {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: min(920px, 100vw);
+    background: var(--paper);
+    color: var(--ink);
+    overflow-y: auto;
+    overflow-x: hidden;
+    box-shadow: 0 0 60px rgba(40, 30, 20, .25);
+    border-left: 1px solid var(--ink);
+    transform: translateX(100%);
+    transition: transform .5s cubic-bezier(.2, .85, .25, 1);
+    will-change: transform;
+    font-family: "Newsreader", Georgia, serif;
+    user-select: text;
+  }
+  #code-overlay.open .code-sheet { transform: translateX(0); }
+  #code-overlay .code-topbar {
+    position: sticky; top: 0;
+    background: rgba(241, 234, 215, .92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 14px 20px 14px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid var(--rule);
+    font-family: "Geist Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    z-index: 2;
+  }
+  #code-overlay .code-topbar .crumbs { display: flex; gap: 14px; align-items: center; }
+  #code-overlay .code-topbar .crumbs .sep { color: var(--rule); }
+  #code-overlay .code-topbar .crumbs b { color: var(--ink); font-weight: 500; }
+  #code-overlay .code-close {
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    width: 28px; height: 28px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    font-family: "Reckless", serif;
+    font-size: 18px;
+    line-height: 1;
+    transition: background .2s;
+  }
+  #code-overlay .code-close:hover { background: var(--accent); }
+  #code-overlay .code-inner {
+    padding: 48px 48px 80px;
+    max-width: 840px;
+    margin: 0 auto;
+  }
+  #code-overlay .code-meta {
+    font-family: "Geist Mono", monospace;
+    font-size: 11px;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+    display: flex; gap: 14px; align-items: center;
+  }
+  #code-overlay .code-meta .sep { color: var(--ink-soft); }
+  #code-overlay .code-meta .label { color: var(--ink-soft); }
+  #code-overlay .code-title {
+    font-family: "Reckless", serif;
+    font-weight: 400;
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 1.05;
+    letter-spacing: -.01em;
+    margin-bottom: 14px;
+  }
+  #code-overlay .code-title em { color: var(--accent); font-style: italic; }
+  #code-overlay .code-dek {
+    font-family: "Newsreader", serif;
+    font-style: italic;
+    font-size: 18px;
+    line-height: 1.4;
+    color: var(--ink-soft);
+    margin-bottom: 28px;
+    padding-bottom: 22px;
+    border-bottom: 1px solid var(--rule);
+    max-width: 56ch;
+  }
+  /* Shiki output — a single <pre class="astro-code github-dark">. Inline
+     styles set color per token; we control the chrome. */
+  #code-overlay .code-body pre {
+    padding: 18px 20px;
+    overflow-x: auto;
+    font-family: "Geist Mono", "Menlo", monospace;
+    font-size: 13.5px;
+    line-height: 1.55;
+    border: 1px solid var(--ink);
+    box-shadow: var(--shadow);
+  }
+  #code-overlay .code-body pre code { background: none; border: none; padding: 0; font: inherit; }
+  /* Fallback used when no <template> exists yet (codeblock created in editor,
+     awaiting save+HMR to produce a Shiki-highlighted template). */
+  #code-overlay .code-body pre.raw {
+    background: #0d1117;
+    color: #c9d1d9;
+  }
+
+  @media (max-width: 700px) {
+    #code-overlay .code-inner { padding: 32px 20px 64px; }
+    #code-overlay .code-title { font-size: 28px; }
+    #code-overlay .code-body pre { font-size: 12.5px; padding: 14px 14px; }
+  }
+</style>
+
+<script>
+  const codeOverlay = document.getElementById('code-overlay')!;
+  const codeSheet = document.getElementById('code-sheet')!;
+  const codeInner = document.getElementById('code-inner')!;
+  const codeLang = document.getElementById('code-lang')!;
+  let activeCodeId: string | null = null;
+
+  function openCodeblock(id: string) {
+    const tpl = document.querySelector<HTMLTemplateElement>(`template[data-codeblock-id="${id}"]`);
+    const trigger = document.querySelector<HTMLElement>(`[data-editable-type="codeblock"][data-id="${id}"]`);
+    activeCodeId = id;
+    const title = tpl?.dataset.title ?? trigger?.dataset.title ?? '';
+    const label = tpl?.dataset.label ?? trigger?.dataset.label ?? '';
+    const dek = tpl?.dataset.dek ?? trigger?.dataset.dek ?? '';
+    const lang = tpl?.dataset.language ?? trigger?.dataset.language ?? 'text';
+    codeLang.textContent = lang;
+    codeInner.innerHTML = `
+      <div class="code-meta">
+        <span>${lang}</span>${label ? `<span class="sep">·</span><span class="label">${label}</span>` : ''}
+      </div>
+      ${title ? `<h1 class="code-title">${title}</h1>` : ''}
+      ${dek ? `<p class="code-dek">${dek}</p>` : ''}
+      <div class="code-body"></div>
+    `;
+    const bodyEl = codeInner.querySelector('.code-body')!;
+    if (tpl) {
+      bodyEl.appendChild(tpl.content.cloneNode(true));
+    } else {
+      // No template — rendering a codeblock that was added in this editor
+      // session and hasn't reloaded yet. Show the raw text from data-code.
+      const raw = trigger?.dataset.code ?? '';
+      const pre = document.createElement('pre');
+      pre.className = 'raw';
+      const code = document.createElement('code');
+      code.textContent = raw;
+      pre.appendChild(code);
+      bodyEl.appendChild(pre);
+    }
+    codeOverlay.classList.add('open');
+    codeOverlay.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => { codeSheet.scrollTop = 0; });
+  }
+
+  function closeCodeblock() {
+    if (!activeCodeId) return;
+    codeOverlay.classList.remove('open');
+    codeOverlay.setAttribute('aria-hidden', 'true');
+    activeCodeId = null;
+  }
+
+  // Bind via delegation so editor-spawned codeblocks (post-HMR) work too.
+  document.addEventListener('click', (e) => {
+    const cb = (e.target as HTMLElement).closest<HTMLElement>('[data-editable-type="codeblock"]');
+    if (!cb) return;
+    // In edit mode the editor's capture-phase listener calls stopPropagation
+    // first, so this only fires for normal viewers.
+    if (document.body.classList.contains('canvas-edit')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const id = cb.dataset.id;
+    if (id) openCodeblock(id);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && activeCodeId) closeCodeblock();
+  });
+
+  // Enter/Space on a focused codeblock opens the overlay (the role="button"
+  // contract — browsers don't synthesize click for divs).
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const active = document.activeElement as HTMLElement | null;
+    if (!active || !active.matches('[data-editable-type="codeblock"]')) return;
+    if (document.body.classList.contains('canvas-edit')) return;
+    e.preventDefault();
+    const id = active.dataset.id;
+    if (id) openCodeblock(id);
+  });
+
+  document.getElementById('code-close')!.addEventListener('click', () => closeCodeblock());
+  document.querySelector('#code-overlay .code-backdrop')!.addEventListener('click', () => closeCodeblock());
+
+  window.addEventListener('navigate-section', () => {
+    if (activeCodeId) closeCodeblock();
+  });
+</script>

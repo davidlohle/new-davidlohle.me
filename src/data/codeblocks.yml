@@ -1,0 +1,118 @@
+verb-registry:
+  x: 818
+  y: 1831
+  rotation: -2
+  z: 3
+  label: aspects.py
+  language: python
+  title: Avatar of <em>Francesco</em>
+  dek: >-
+    Avatar of Francesco is a great card to showcase the engine lifecycle, as it touches all three queues and state
+    machines. Cards declare themselves via lifecycle decorators. The first block is the core card logic; which installs
+    a <em>pending_action</em> of <em>gain</em>. The engine halts further advancing while it then processes the inserted
+    action, via looking up the <em>gain</em> installed by AoF. Since this card allows other players to choose an action
+    as well, the <em>gain</em> action installs a <em>pending_action</em> for all other opponents, letting them choose
+    whether or not to gain the card as well.
+  code: |-
+    # ─── 1. CARD EFFECT: runs when the card is played ───────────────────────────
+      @card_effect("Avatar of Francesco")
+      def _effect_avatar_of_francesco(cur_player, cur_pid):
+          options = supply_options()
+          if options:
+              # set_pending halts the turn here. The engine won't advance to the
+              # next phase until a matching @action_choice fires and clears it.
+              # The "gain" tag is the discriminator the choice handler dispatches on.
+              set_pending("Avatar of Francesco", "gain", options=sorted(options))
+          else:
+              add_log(f"No cards to gain")
+
+
+      # ─── 2. ACTION CHOICE: resolves the pending the effect installed ────────────
+      @action_choice("Avatar of Francesco", "gain")
+      def _handle_avatar_francesco_gain(cur_player, cur_pid, data, pending):
+          # `data` is the client's response payload; `pending` is the dict we set above.
+          card_name = data.get("card_name")
+          options = pending.get("options", [])
+          clear_pending(pending)  # release the engine; we'll re-block below if needed
+
+          if not card_name or card_name not in options:
+              return  # invalid selection -> silently no-op; engine continues
+
+          # gain_from_supply runs the full gain pipeline (on-gain hooks, triggers, etc.)
+          if not gain_from_supply(cur_player, card_name, destination="hand", pid=cur_pid):
+              return
+          add_log(f"{cur_player['name']} gains {card_name} to hand")
+
+          # Fan out to every opponent. enqueue_opponent registers a pending
+          # attack-response keyed by pid; each opponent will independently
+          # answer via the @attack_response handler below.
+          for pid in state.game["player_order"]:
+              if pid != cur_pid:
+                  gain.enqueue_opponent(pid, {
+                      "card": "Avatar of Francesco",
+                      "chosen_card": card_name,
+                  })
+
+          # The gain above may have triggered on-gain reactions (Watchtower, Hostelry,
+          # Border Village...) that installed their own pending. If so, set_pending
+          # is identity-aware and defers via a thunk so OUR pending fires only after
+          # those resolve. Either way, we install a "waiting" pending so the turn
+          # player stays blocked until every opponent has answered.
+          if gain.any_opponent_pending():
+              set_pending("Avatar of Francesco", "waiting")
+
+
+      # ─── 3. ATTACK RESPONSE: one invocation per opponent, accept or decline ─────
+      # (attack_response is a bit of a misnomer, but the engine started out as only
+      # "attacks" being the thing off-turn players responded to (i.e. trash a card),
+      # but as cards grew in complexity, attack_response became the pipeline to handle
+      # ALL off-turn action responses. I could rename this; but that's a significant
+      # burden for very little pay off.)
+      @attack_response("Avatar of Francesco")
+      def _respond_avatar_francesco(player, pid, data, attack):
+          # `player`/`pid` here are the OPPONENT, not the turn player.
+          # `attack` is the dict we enqueued via gain.enqueue_opponent.
+          chosen_card = attack.get("chosen_card")
+
+          if data.get("accept"):
+              # off_turn_actor swaps the "current actor" for the duration of the block.
+              # Without it, any on-gain hook (e.g. Watchtower trashing the Curse)
+              # would fire against the turn player's state instead of this opponent's.
+              with off_turn_actor(pid):
+                  if gain_from_supply(player, "Curse", pid=pid):
+                      gain_from_supply(player, chosen_card, pid=pid)
+                      add_log(f"{player['name']} gains a Curse and {chosen_card}")
+                  else:
+                      add_log(f"{player['name']} accepts but no Curses available")
+          else:
+              add_log(f"{player['name']} declines")
+
+          # pop_opponent clears this opponent's queued attack-response. When the
+          # last one pops, the turn player's "waiting" pending unblocks and the
+          # turn resumes.
+          gain.pop_opponent(pid)
+codeblock-mpiibxe8:
+  x: 277
+  y: 1824
+  rotation: 1
+  z: 3
+  label: avatar_of_matthew
+  language: json
+  title: Avatar of <em>Matthew</em>
+  dek: >-
+    Cards that lack interior logic are purely declarative, like Avatar of Matthew. The engine natively can add the coins
+    and subtract the VP that AoM provides, without further decorator logic.
+  code: |-
+    {
+        "Avatar of Matthew": {
+            "type": "avatar-treasure-curse",
+            "cost": 7,
+            "coins": 5,
+            "vp": -3,
+            "desc": "+$5. −3 VP.",
+            "expansion": "Aspects",
+            "tags": [
+                "+Coins"
+            ]
+        }
+    }
