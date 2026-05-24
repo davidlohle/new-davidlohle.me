@@ -7,11 +7,6 @@ readme-mphjw4dv:
   viewZoom: 0.85
   pin: README
   title: <em>Dominion</em> online
-  mobile:
-    x: 30
-    y: 3700
-    width: 340
-  status: "status: active | 2026"
   body: >-
     <p>My friends and I really like the card game Dominion. There are already official online offerings of Dominion, but
     we like playing with house rules, custom printed cards, and competitive matches with rewards. In addition, I thought
@@ -26,6 +21,7 @@ readme-mphjw4dv:
 
     <p>The payoff of this architecture is its' extensibility; adding a new card, a full custom expansion, or a house
     rule is a single decorated function leveraging these API-like verbs—no changes to the engine required.</p> 
+  status: "status: active | 2026"
   tags:
     - Python
     - Flask
@@ -33,3 +29,8 @@ readme-mphjw4dv:
     - Javascript
     - Jotai
   links: []
+  z: 2
+  mobile:
+    x: 479
+    y: 4194
+    width: 340

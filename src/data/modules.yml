@@ -22,8 +22,8 @@ photo:
   width: 1100
   viewZoom: 0.9
   mobile:
-    x: 520
-    y: 600
+    x: 558
+    y: 1424
     width: 340
 projects:
   x: 5231
@@ -31,8 +31,8 @@ projects:
   width: 1100
   viewZoom: 0.85
   mobile:
-    x: 778
-    y: 1934
+    x: 695
+    y: 2013
     width: 340
 writing:
   x: 1880
@@ -40,8 +40,8 @@ writing:
   width: 760
   viewZoom: 1
   mobile:
-    x: 520
-    y: 200
+    x: 503
+    y: 863
     width: 340
 contact:
   x: 3400

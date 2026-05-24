@@ -3,10 +3,6 @@ verb-registry:
   y: 1831
   rotation: -2
   z: 3
-  mobile:
-    x: 80
-    y: 5430
-    rotation: -2
   label: aspects.py
   language: python
   title: Avatar of <em>Francesco</em>
@@ -95,15 +91,15 @@ verb-registry:
           # last one pops, the turn player's "waiting" pending unblocks and the
           # turn resumes.
           gain.pop_opponent(pid)
+  mobile:
+    x: 702
+    y: 5199
+    rotation: -2
 codeblock-mpiibxe8:
   x: 277
   y: 1824
   rotation: 1
   z: 3
-  mobile:
-    x: 420
-    y: 5430
-    rotation: 1
   label: avatar_of_matthew
   language: json
   title: Avatar of <em>Matthew</em>
@@ -124,3 +120,7 @@ codeblock-mpiibxe8:
             ]
         }
     }
+  mobile:
+    x: 376
+    y: 5197
+    rotation: 1

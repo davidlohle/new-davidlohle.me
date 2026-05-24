@@ -36,8 +36,8 @@ canvas-photo-mphnpa1k:
   pinLabel: ""
   z: 2
   mobile:
-    x: 620
-    y: 3750
+    x: 240
+    y: 3834
     rotation: 0
     scale: 0.5
 canvas-photo-mphnzd5y:
@@ -50,8 +50,8 @@ canvas-photo-mphnzd5y:
   pinLabel: ""
   z: 2
   mobile:
-    x: 620
-    y: 4250
+    x: 535
+    y: 3856
     rotation: 0
     scale: 0.5
 canvas-photo-mpho6jgs:
@@ -64,10 +64,10 @@ canvas-photo-mpho6jgs:
   pinLabel: ""
   z: 2
   mobile:
-    x: 300
-    y: 4700
+    x: 383
+    y: 4701
     rotation: 2
-    scale: 0.4
+    scale: 0.25
 canvas-photo-mphofcav:
   photoId: avatar-of-matthew
   x: 86
@@ -78,10 +78,10 @@ canvas-photo-mphofcav:
   pinLabel: ""
   z: 2
   mobile:
-    x: 80
-    y: 4700
+    x: 251
+    y: 4701
     rotation: 0
-    scale: 0.4
+    scale: 0.25
 canvas-photo-mphogai8:
   photoId: avatar-of-francesco
   x: 587
@@ -95,7 +95,7 @@ canvas-photo-mphogai8:
     x: 520
     y: 4700
     rotation: 0
-    scale: 0.4
+    scale: 0.25
 canvas-photo-mphouu2o:
   photoId: dominion-behelit
   x: 1993
