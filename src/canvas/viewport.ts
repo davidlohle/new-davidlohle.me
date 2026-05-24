@@ -83,15 +83,34 @@ function applyMobileLayout() {
   });
 }
 
+// How much of the viewport a module has to fill (vertically) before we treat
+// it as "tall" — taller-than-viewport modules get top-aligned instead of
+// centered, since centering clips both ends of unreadable text.
+const TALL_RATIO = 0.9;
+// Buffer between viewport top and module top when top-aligning a tall module.
+const TALL_TOP_PADDING = 30;
+
+// Compute the ideal viewport-center world coords for a module/readme element.
+// On mobile, tall elements bias toward the top edge so the user starts at the
+// beginning of the content instead of the middle. Desktop always centers.
+function viewCenterFor(el: HTMLElement): { x: number; y: number; z: number } {
+  const x = parseFloat(el.dataset.x || '0') + parseFloat(el.dataset.width || '0') / 2;
+  const z = parseFloat(el.dataset.viewZoom || '1') || 1;
+  const h = el.offsetHeight;
+  const top = parseFloat(el.dataset.y || '0');
+  let y = top + h / 2;
+  if (isMobile() && h * z > window.innerHeight * TALL_RATIO) {
+    y = top + (window.innerHeight / 2 - TALL_TOP_PADDING) / z;
+  }
+  return { x, y, z };
+}
+
 function getView(section: string): { x: number; y: number; z: number } | null {
   const m = document.querySelector<HTMLElement>(
     `[data-editable-type="module"][data-id="${section}"]`,
   );
   if (!m) return null;
-  const x = parseFloat(m.dataset.x || '0') + parseFloat(m.dataset.width || '0') / 2;
-  const y = parseFloat(m.dataset.y || '0') + m.offsetHeight / 2;
-  const z = parseFloat(m.dataset.viewZoom || '1') || 1;
-  return { x, y, z };
+  return viewCenterFor(m);
 }
 
 let zoom = 0.55, panX = 0, panY = 0;
@@ -277,6 +296,12 @@ function startMomentum() {
 // Soft snap-to-section: after a fling decays (or a stationary release on
 // mobile), nudge the view to the nearest module if it's within reach. Keeps
 // exploration loose but lands you cleanly when you were aiming for a section.
+//
+// Tall modules get two special-cases: (1) the snap target is top-aligned (via
+// viewCenterFor) so the user lands at the start of the content, and (2) if
+// the user's viewport center is already inside the module's vertical range
+// they're treated as "reading" — no snap fires, so they can free-scroll
+// within the module without being yanked back to a fixed position.
 function snapToNearestSection() {
   if (!isMobile()) return;
   const vw = window.innerWidth, vh = window.innerHeight;
@@ -286,10 +311,13 @@ function snapToNearestSection() {
   document.querySelectorAll<HTMLElement>(
     '[data-editable-type="module"][data-mobile-x]',
   ).forEach((el) => {
-    const x = parseFloat(el.dataset.x || '0') + parseFloat(el.dataset.width || '0') / 2;
-    const y = parseFloat(el.dataset.y || '0') + el.offsetHeight / 2;
-    const d = Math.hypot(x - cx, y - cy);
-    if (d < bestD) { bestD = d; bestX = x; bestY = y; }
+    const top = parseFloat(el.dataset.y || '0');
+    const bottom = top + el.offsetHeight;
+    const isTall = el.offsetHeight * zoom > vh * TALL_RATIO;
+    if (isTall && cy >= top && cy <= bottom) return;
+    const target = viewCenterFor(el);
+    const d = Math.hypot(target.x - cx, target.y - cy);
+    if (d < bestD) { bestD = d; bestX = target.x; bestY = target.y; }
   });
   if (bestD > MOBILE_SNAP_RADIUS) return;
   fitToCenter(bestX, bestY, zoom);
@@ -384,10 +412,8 @@ function panToProject(projectId: string) {
     `[data-editable-type="readme"][data-project-id="${CSS.escape(projectId)}"]`,
   );
   if (!readme) return;
-  const x = parseFloat(readme.dataset.x || '0') + parseFloat(readme.dataset.width || '0') / 2;
-  const y = parseFloat(readme.dataset.y || '0') + readme.offsetHeight / 2;
-  const z = parseFloat(readme.dataset.viewZoom || '0.85') || 0.85;
-  fitToCenter(x, y, z);
+  const v = viewCenterFor(readme);
+  fitToCenter(v.x, v.y, v.z);
   applyTransform(true);
 }
 document.querySelectorAll<HTMLButtonElement>('#m-projects .proj[data-project-id]').forEach((btn) => {
