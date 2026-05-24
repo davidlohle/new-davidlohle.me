@@ -144,6 +144,14 @@ export async function loadCanvasData() {
   // injected record (newlines & quoting intact).
   const codeblockDataForEditor = Object.fromEntries(codeblocks.map((c) => [c.id, c.data]));
 
+  // Same idea for the remaining annotation types: the mobile sub-object would
+  // otherwise be lost on save because the editor's read() path can't recover
+  // it from data-* attrs (applyMobileLayout overwrites x/y with mobile coords).
+  // Injecting the full record means write() can preserve the un-edited side.
+  const stickyDataForEditor = Object.fromEntries(stickies.map((s) => [s.id, s.data]));
+  const boxDataForEditor = Object.fromEntries(boxes.map((b) => [b.id, b.data]));
+  const photoDataForEditor = Object.fromEntries(canvasPhotos.map((cp) => [cp.id, cp.data]));
+
   // Arrow SVGs are loaded once at build time from src/data/arrows/. Each .svg
   // file becomes an available "kind" the user can pick from. The arrows
   // collection (positions/sizes/rotation) references kinds by filename stem.
@@ -155,6 +163,7 @@ export async function loadCanvasData() {
     arrowKinds.map((k) => [k, readFileSync(pathJoin(arrowDir, `${k}.svg`), 'utf-8')]),
   );
   const arrows = await getCollection('arrows');
+  const arrowDataForEditor = Object.fromEntries(arrows.map((a) => [a.id, a.data]));
 
   // Editor needs a list of available photo entries to populate its picker.
   // Kept tiny — just id + caption — so it's cheap to include unconditionally.
@@ -183,6 +192,10 @@ export async function loadCanvasData() {
     moduleDataForEditor,
     readmeDataForEditor,
     codeblockDataForEditor,
+    stickyDataForEditor,
+    boxDataForEditor,
+    photoDataForEditor,
+    arrowDataForEditor,
     mod,
   };
 }

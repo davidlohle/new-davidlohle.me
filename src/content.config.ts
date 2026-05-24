@@ -56,6 +56,16 @@ const now = defineCollection({
   }),
 });
 
+const mobilePos = z
+  .object({
+    x: z.number().optional(),
+    y: z.number().optional(),
+    rotation: z.number().optional(),
+    scale: z.number().optional(),
+    hide: z.boolean().optional(),
+  })
+  .optional();
+
 const stickies = defineCollection({
   loader: file('./src/data/stickies.yml', { parser: yamlParser }),
   schema: z.object({
@@ -65,6 +75,7 @@ const stickies = defineCollection({
     color: z.string().default('#f3c40c'),
     body: z.string(),
     z: z.number().default(2),
+    mobile: mobilePos,
   }),
 });
 
@@ -96,6 +107,7 @@ const boxes = defineCollection({
     title: z.string().optional(),
     body: z.string().default(''),
     z: z.number().default(2),
+    mobile: mobilePos,
   }),
 });
 
@@ -110,6 +122,7 @@ const canvasPhotos = defineCollection({
     variant: z.enum(['polaroid', 'polaroid-fit', 'framed', 'unframed']).default('polaroid'),
     pinLabel: z.string().optional(),
     z: z.number().default(2),
+    mobile: mobilePos,
   }),
 });
 
@@ -149,10 +162,7 @@ const codeblocks = defineCollection({
     title: z.string().optional(),
     dek: z.string().optional(),
     code: z.string().default(''),
-    mobile: z.object({
-      x: z.number(),
-      y: z.number(),
-    }).optional(),
+    mobile: mobilePos,
   }),
 });
 
@@ -166,6 +176,7 @@ const arrows = defineCollection({
     height: z.number().default(315),
     rotation: z.number().default(0),
     z: z.number().default(1),
+    mobile: mobilePos,
   }),
 });
 

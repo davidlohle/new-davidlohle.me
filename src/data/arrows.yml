@@ -6,6 +6,8 @@ about-me-arrow:
   height: 315
   rotation: 90
   z: 1
+  mobile:
+    hide: true
 honest-schedule-arrow:
   kind: basic-arrow
   x: 4760
@@ -14,6 +16,8 @@ honest-schedule-arrow:
   height: 242
   rotation: 0
   z: 1
+  mobile:
+    hide: true
 arrow-mphcyppv:
   kind: squiggle-arrow
   x: 2551
@@ -22,6 +26,8 @@ arrow-mphcyppv:
   height: 302
   rotation: -180
   z: 1
+  mobile:
+    hide: true
 arrow-mphorat9:
   kind: swoop-arrow
   x: 1719
@@ -30,6 +36,8 @@ arrow-mphorat9:
   height: 245
   rotation: -132
   z: 3
+  mobile:
+    hide: true
 arrow-mphorn7n:
   kind: short-arrow
   x: 1707
@@ -38,3 +46,5 @@ arrow-mphorn7n:
   height: 197
   rotation: -136
   z: 5
+  mobile:
+    hide: true

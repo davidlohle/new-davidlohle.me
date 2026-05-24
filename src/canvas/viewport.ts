@@ -18,21 +18,26 @@ const coordLabel = document.getElementById('coord')!;
 
 const WORLD_W = 8000, WORLD_H = 5400;
 
-// Mobile: a constrained corner of the same world. The canvas metaphor stays,
-// but zoom is locked and pan is clamped to a small box around the modules.
+// Mobile: a constrained corner of the same world. Zoom is locked, but pan is
+// free on both axes inside a 2D box — modules are scattered (not stacked) so
+// the "exploration" feel of the desktop canvas survives on phones.
 const MOBILE_BP = 700;
-const MOBILE_WORLD = { w: 400, h: 4350 };
+const MOBILE_WORLD = { w: 1100, h: 6600 };
 const MOBILE_ZOOM = 1.0;
+// Snap radius (world px): after a fling settles, if the viewport center is
+// within this distance of a module center, glide the rest of the way. Tuned
+// so a near-miss lands cleanly without snatching the canvas away from someone
+// who deliberately parked between modules.
+const MOBILE_SNAP_RADIUS = 280;
 const isMobile = () => window.innerWidth <= MOBILE_BP;
 
 function applyMobileLayout() {
-  // Modules + READMEs both opt into mobile layout via `data-mobile-*` attrs.
-  // Whatever has the trio gets repositioned + has its active coords rewritten
-  // so getView / panToProject read the mobile layout.
-  const selector =
+  // Modules + READMEs anchor the layout: width is rewritten and view-zoom is
+  // forced to 1.0 so nav-button jumps land predictably on phones.
+  document.querySelectorAll<HTMLElement>(
     '[data-editable-type="module"][data-mobile-x],' +
-    '[data-editable-type="readme"][data-mobile-x]';
-  document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+      '[data-editable-type="readme"][data-mobile-x]',
+  ).forEach((el) => {
     const mx = el.dataset.mobileX, my = el.dataset.mobileY, mw = el.dataset.mobileWidth;
     if (!mx || !my || !mw) return;
     el.style.left = mx + 'px';
@@ -42,6 +47,39 @@ function applyMobileLayout() {
     el.dataset.y = my;
     el.dataset.width = mw;
     el.dataset.viewZoom = String(MOBILE_ZOOM);
+  });
+
+  // Annotations (stickies, photos, boxes, codeblocks, arrows): if they have
+  // mobile coords, reposition + re-apply transform with mobile rotation/scale
+  // overrides. If they don't, hide them — leaving desktop-positioned items
+  // floating in mobile-world dead space is worse than dropping them. Authors
+  // can mark explicit hides with mobile.hide too (e.g. the "press 0" tip).
+  document.querySelectorAll<HTMLElement>(
+    '[data-editable-type="sticky"],' +
+      '[data-editable-type="canvas-photo"],' +
+      '[data-editable-type="box"],' +
+      '[data-editable-type="codeblock"],' +
+      '[data-editable-type="arrow"]',
+  ).forEach((el) => {
+    const mx = el.dataset.mobileX, my = el.dataset.mobileY;
+    if (el.dataset.mobileHide !== undefined || !mx || !my) {
+      el.style.display = 'none';
+      return;
+    }
+    const rot = el.dataset.mobileRotation ?? el.dataset.rotation ?? '0';
+    // canvas-photo carries scale; other types don't have a desktop scale.
+    const baseScale = el.dataset.scale;
+    const scale = el.dataset.mobileScale ?? baseScale;
+    const xform = scale != null
+      ? `rotate(${rot}deg) scale(${scale})`
+      : `rotate(${rot}deg)`;
+    el.style.left = mx + 'px';
+    el.style.top = my + 'px';
+    el.style.transform = xform;
+    el.dataset.x = mx;
+    el.dataset.y = my;
+    if (el.dataset.mobileRotation) el.dataset.rotation = el.dataset.mobileRotation;
+    if (el.dataset.mobileScale && baseScale != null) el.dataset.scale = el.dataset.mobileScale;
   });
 }
 
@@ -75,9 +113,12 @@ function clampPan() {
   panY = worldH <= vh ? (vh - worldH) / 2 : Math.min(0, Math.max(vh - worldH, panY));
 }
 
-function applyTransform(animate = true) {
+function applyTransform(animate: boolean | string = true) {
   clampPan();
-  world.style.transition = animate ? '' : 'none';
+  // `animate` accepts a custom transition string (used by the mobile intro
+  // sequence to ease over a longer duration than the default 0.8s).
+  if (typeof animate === 'string') world.style.transition = animate;
+  else world.style.transition = animate ? '' : 'none';
   world.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
   zoomLabel.textContent = Math.round(zoom * 100) + '%';
   updateMinimap();
@@ -144,8 +185,30 @@ function sectionFromPath(): string {
 }
 const initialSection = sectionFromPath();
 const initialView = getView(initialSection) ?? getView('hero') ?? { x: 3900, y: 2600, z: 0.55 };
-fitToCenter(initialView.x, initialView.y, initialView.z);
-applyTransform(false);
+
+// Mobile intro: open zoomed-out so the user can see modules sprawl above and
+// below their landing target, then ease in to the default view. Skipped on
+// desktop (already has its own affordance — the visible empty canvas) and on
+// deep-link entry to non-hero sections (the section itself is the target,
+// don't surprise them).
+const INTRO_START_ZOOM = 0.2;
+const INTRO_DURATION_MS = 1400;
+const wantsIntro = isMobile() && initialSection === 'hero';
+
+if (wantsIntro) {
+  fitToCenter(initialView.x, initialView.y, INTRO_START_ZOOM);
+  applyTransform(false);
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      fitToCenter(initialView.x, initialView.y, initialView.z);
+      applyTransform(`transform ${INTRO_DURATION_MS}ms cubic-bezier(.22,.61,.36,1)`);
+      setTimeout(() => { world.style.transition = ''; }, INTRO_DURATION_MS + 50);
+    }, 350);
+  });
+} else {
+  fitToCenter(initialView.x, initialView.y, initialView.z);
+  applyTransform(false);
+}
 document.querySelectorAll<HTMLButtonElement>('#nav button').forEach((b) => {
   b.classList.toggle('active', b.dataset.jump === initialSection);
 });
@@ -195,12 +258,15 @@ function startMomentum() {
     // hit a wall and the rest of its velocity has nowhere to go.
     if (panX !== targetX) velX = 0;
     if (panY !== targetY) velY = 0;
-    // Time-normalized decay (~0.95 per 16ms frame).
-    const decay = Math.pow(0.95, dt / 16);
+    // Time-normalized decay. Tighter than the original 0.95 — at 60fps a hard
+    // fling used to drift for ~3s, which felt like the canvas was ignoring
+    // follow-up taps. ~0.88 settles in under a second.
+    const decay = Math.pow(0.88, dt / 16);
     velX *= decay;
     velY *= decay;
-    if (Math.abs(velX) < 0.01 && Math.abs(velY) < 0.01) {
+    if (Math.abs(velX) < 0.04 && Math.abs(velY) < 0.04) {
       momentumRaf = null;
+      snapToNearestSection();
       return;
     }
     momentumRaf = requestAnimationFrame(step);
@@ -208,9 +274,33 @@ function startMomentum() {
   momentumRaf = requestAnimationFrame(step);
 }
 
+// Soft snap-to-section: after a fling decays (or a stationary release on
+// mobile), nudge the view to the nearest module if it's within reach. Keeps
+// exploration loose but lands you cleanly when you were aiming for a section.
+function snapToNearestSection() {
+  if (!isMobile()) return;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const cx = (vw / 2 - panX) / zoom;
+  const cy = (vh / 2 - panY) / zoom;
+  let bestX = 0, bestY = 0, bestD = Infinity;
+  document.querySelectorAll<HTMLElement>(
+    '[data-editable-type="module"][data-mobile-x]',
+  ).forEach((el) => {
+    const x = parseFloat(el.dataset.x || '0') + parseFloat(el.dataset.width || '0') / 2;
+    const y = parseFloat(el.dataset.y || '0') + el.offsetHeight / 2;
+    const d = Math.hypot(x - cx, y - cy);
+    if (d < bestD) { bestD = d; bestX = x; bestY = y; }
+  });
+  if (bestD > MOBILE_SNAP_RADIUS) return;
+  fitToCenter(bestX, bestY, zoom);
+  applyTransform(true);
+}
+
 viewport.addEventListener('pointerdown', (e) => {
-  if ((e.target as HTMLElement).closest('button, a, .nav, .controls, .minimap, .topbar, .canvas-photo.framed, .codeblock')) return;
+  // Always stop ongoing momentum — even taps on buttons/photos should kill
+  // the fling, or follow-up touches feel like they're fighting drift.
   cancelMomentum();
+  if ((e.target as HTMLElement).closest('button, a, .nav, .controls, .minimap, .topbar, .canvas-photo.framed, .codeblock')) return;
   dragging = true;
   lastX = e.clientX; lastY = e.clientY;
   samples = [{ t: performance.now(), x: e.clientX, y: e.clientY }];
@@ -236,6 +326,7 @@ viewport.addEventListener('pointerup', () => {
   dragging = false;
   viewport.classList.remove('grabbing');
   world.classList.remove('grabbing');
+  let flung = false;
   if (samples.length >= 2) {
     const oldest = samples[0];
     const newest = samples[samples.length - 1];
@@ -245,10 +336,13 @@ viewport.addEventListener('pointerup', () => {
       velX = (newest.x - oldest.x) / dt;
       velY = (newest.y - oldest.y) / dt;
       const speed = Math.hypot(velX, velY);
-      if (speed > 0.05) startMomentum();
+      if (speed > 0.05) { startMomentum(); flung = true; }
     }
   }
   samples = [];
+  // Released without a fling → snap directly. (A fling snaps when its
+  // momentum loop exits.)
+  if (!flung) snapToNearestSection();
 });
 
 // wheel zoom

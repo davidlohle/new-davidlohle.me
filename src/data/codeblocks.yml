@@ -3,6 +3,10 @@ verb-registry:
   y: 1831
   rotation: -2
   z: 3
+  mobile:
+    x: 80
+    y: 5430
+    rotation: -2
   label: aspects.py
   language: python
   title: Avatar of <em>Francesco</em>
@@ -96,6 +100,10 @@ codeblock-mpiibxe8:
   y: 1824
   rotation: 1
   z: 3
+  mobile:
+    x: 420
+    y: 5430
+    rotation: 1
   label: avatar_of_matthew
   language: json
   title: Avatar of <em>Matthew</em>

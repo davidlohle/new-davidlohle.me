@@ -75,61 +75,104 @@ function setField(item: Item, key: string, value: unknown): void {
 
 // ─────────────────────────────  adapters  ─────────────────────────────
 
+type StickyMobile = { x?: number; y?: number; rotation?: number; scale?: number; hide?: boolean };
+type StickyData = {
+  x: number; y: number; rotation: number; color: string; body: string; z: number;
+  mobile?: StickyMobile;
+};
+
+const STICKY_BASE_FIELDS: AdapterField[] = [
+  { key: 'body', label: 'Body (HTML)', control: 'textarea' },
+  {
+    key: 'color',
+    label: 'Color',
+    control: 'color',
+    presets: [
+      '#f3c40c', // classic yellow
+      '#f4a8b8', // pink
+      '#a8c8e8', // sky blue
+      '#b8d8a8', // mint green
+      '#d97947', // orange
+      '#d4a8e8', // lavender
+      '#fffdf6', // cream
+    ],
+  },
+  { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
+];
+
 const stickyAdapter: Adapter = {
   type: 'sticky',
   collection: 'stickies',
   selector: '[data-editable-type="sticky"]',
   resizable: 'none',
   addLabel: '+ Sticky',
-  fields: [
-    { key: 'body', label: 'Body (HTML)', control: 'textarea' },
-    {
-      key: 'color',
-      label: 'Color',
-      control: 'color',
-      presets: [
-        '#f3c40c', // classic yellow
-        '#f4a8b8', // pink
-        '#a8c8e8', // sky blue
-        '#b8d8a8', // mint green
-        '#d97947', // orange
-        '#d4a8e8', // lavender
-        '#fffdf6', // cream
-      ],
-    },
-    { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
-    { key: 'x', label: 'X', control: 'number', step: 10 },
-    { key: 'y', label: 'Y', control: 'number', step: 10 },
-    { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
-  ],
+  fields: () =>
+    isMobileEditor()
+      ? [
+          ...STICKY_BASE_FIELDS,
+          { key: 'mobile.x', label: 'Mobile X', control: 'number', step: 10 },
+          { key: 'mobile.y', label: 'Mobile Y', control: 'number', step: 10 },
+        ]
+      : [
+          ...STICKY_BASE_FIELDS,
+          { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
+          { key: 'x', label: 'X', control: 'number', step: 10 },
+          { key: 'y', label: 'Y', control: 'number', step: 10 },
+        ],
+  positionKeys: () =>
+    isMobileEditor()
+      ? { x: 'mobile.x', y: 'mobile.y', width: 'width' }
+      : { x: 'x', y: 'y', width: 'width' },
   create: ({ x, y }) => ({
     id: 'sticky-' + Date.now().toString(36),
     data: { x: Math.round(x), y: Math.round(y), rotation: 0, color: '#f3c40c', body: 'New sticky.', z: 2 },
   }),
-  read: (el) => ({
-    id: el.dataset.id!,
-    data: {
-      x: parseFloat(el.dataset.x || '0'),
-      y: parseFloat(el.dataset.y || '0'),
-      rotation: parseFloat(el.dataset.rotation || '0'),
-      color: el.dataset.color || '#f3c40c',
-      body: el.innerHTML.replace(/<div class="edit-handle"[^>]*>.*?<\/div>/g, ''),
-      z: parseFloat(el.dataset.z || '2'),
-    },
-  }),
+  read: (el) => {
+    const w = window as unknown as { __stickyData?: Record<string, StickyData> };
+    const id = el.dataset.id!;
+    const rec = w.__stickyData?.[id];
+    if (rec) return { id, data: structuredClone(rec) };
+    return {
+      id,
+      data: {
+        x: parseFloat(el.dataset.x || '0'),
+        y: parseFloat(el.dataset.y || '0'),
+        rotation: parseFloat(el.dataset.rotation || '0'),
+        color: el.dataset.color || '#f3c40c',
+        body: el.innerHTML.replace(/<div class="edit-handle"[^>]*>.*?<\/div>/g, ''),
+        z: parseFloat(el.dataset.z || '2'),
+      },
+    };
+  },
   write: (el, item) => {
-    const d = item.data as { x: number; y: number; rotation: number; color: string; body: string; z: number };
-    el.style.left = d.x + 'px';
-    el.style.top = d.y + 'px';
-    el.style.transform = `rotate(${d.rotation}deg)`;
+    const d = item.data as StickyData;
+    const useMobile = isMobileEditor() && d.mobile && d.mobile.x != null && d.mobile.y != null;
+    const rot = useMobile && d.mobile?.rotation != null ? d.mobile.rotation : d.rotation;
+    if (useMobile) {
+      el.style.left = d.mobile!.x + 'px';
+      el.style.top = d.mobile!.y + 'px';
+      el.dataset.x = String(d.mobile!.x);
+      el.dataset.y = String(d.mobile!.y);
+    } else {
+      el.style.left = d.x + 'px';
+      el.style.top = d.y + 'px';
+      el.dataset.x = String(d.x);
+      el.dataset.y = String(d.y);
+    }
+    el.style.transform = `rotate(${rot}deg)`;
     el.style.background = d.color;
     el.style.zIndex = String(d.z);
     setBodyHTML(el, d.body);
-    el.dataset.x = String(d.x);
-    el.dataset.y = String(d.y);
     el.dataset.rotation = String(d.rotation);
     el.dataset.color = d.color;
     el.dataset.z = String(d.z);
+    if (d.mobile?.x != null) el.dataset.mobileX = String(d.mobile.x);
+    if (d.mobile?.y != null) el.dataset.mobileY = String(d.mobile.y);
+    if (d.mobile?.rotation != null) el.dataset.mobileRotation = String(d.mobile.rotation);
+    if (d.mobile?.scale != null) el.dataset.mobileScale = String(d.mobile.scale);
+    // Keep the injected record in sync so subsequent reads see the latest data.
+    const w = window as unknown as { __stickyData?: Record<string, StickyData> };
+    if (w.__stickyData) w.__stickyData[item.id] = structuredClone(d);
   },
   spawn: (item) => {
     const el = document.createElement('div');
@@ -219,34 +262,58 @@ const moduleAdapter: Adapter = {
   },
 };
 
+type BoxMobile = { x?: number; y?: number; rotation?: number; scale?: number; hide?: boolean };
+type BoxData = {
+  x: number; y: number; width: number; height: number; rotation: number;
+  variant: string; pin: string; title: string; body: string; z: number;
+  mobile?: BoxMobile;
+};
+
+const BOX_BASE_FIELDS: AdapterField[] = [
+  { key: 'pin', label: 'Pin (optional)', control: 'text' },
+  { key: 'title', label: 'Title (HTML)', control: 'text' },
+  { key: 'body', label: 'Body (HTML)', control: 'textarea' },
+  {
+    key: 'variant',
+    label: 'Variant',
+    control: 'select',
+    options: () => [
+      { value: 'paper', label: 'paper' },
+      { value: 'plain', label: 'plain' },
+      { value: 'dark', label: 'dark' },
+      { value: 'accent', label: 'accent' },
+    ],
+  },
+  { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
+];
+
 const boxAdapter: Adapter = {
   type: 'box',
   collection: 'boxes',
   selector: '[data-editable-type="box"]',
   resizable: 'both',
   addLabel: '+ Box',
-  fields: [
-    { key: 'pin', label: 'Pin (optional)', control: 'text' },
-    { key: 'title', label: 'Title (HTML)', control: 'text' },
-    { key: 'body', label: 'Body (HTML)', control: 'textarea' },
-    {
-      key: 'variant',
-      label: 'Variant',
-      control: 'select',
-      options: () => [
-        { value: 'paper', label: 'paper' },
-        { value: 'plain', label: 'plain' },
-        { value: 'dark', label: 'dark' },
-        { value: 'accent', label: 'accent' },
-      ],
-    },
-    { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
-    { key: 'x', label: 'X', control: 'number', step: 10 },
-    { key: 'y', label: 'Y', control: 'number', step: 10 },
-    { key: 'width', label: 'Width', control: 'number', step: 10 },
-    { key: 'height', label: 'Height', control: 'number', step: 10 },
-    { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
-  ],
+  fields: () =>
+    isMobileEditor()
+      ? [
+          ...BOX_BASE_FIELDS,
+          { key: 'mobile.x', label: 'Mobile X', control: 'number', step: 10 },
+          { key: 'mobile.y', label: 'Mobile Y', control: 'number', step: 10 },
+        ]
+      : [
+          ...BOX_BASE_FIELDS,
+          { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
+          { key: 'x', label: 'X', control: 'number', step: 10 },
+          { key: 'y', label: 'Y', control: 'number', step: 10 },
+          { key: 'width', label: 'Width', control: 'number', step: 10 },
+          { key: 'height', label: 'Height', control: 'number', step: 10 },
+        ],
+  // Width/height stay desktop-only — the mobile schema has no width/height,
+  // so a resize on mobile would update the desktop dimensions.
+  positionKeys: () =>
+    isMobileEditor()
+      ? { x: 'mobile.x', y: 'mobile.y', width: 'width' }
+      : { x: 'x', y: 'y', width: 'width' },
   create: ({ x, y }) => ({
     id: 'box-' + Date.now().toString(36),
     data: {
@@ -262,35 +329,47 @@ const boxAdapter: Adapter = {
       z: 2,
     },
   }),
-  read: (el) => ({
-    id: el.dataset.id!,
-    data: {
-      x: parseFloat(el.dataset.x || '0'),
-      y: parseFloat(el.dataset.y || '0'),
-      width: parseFloat(el.dataset.width || '320'),
-      height: parseFloat(el.dataset.height || '160'),
-      rotation: parseFloat(el.dataset.rotation || '0'),
-      variant: el.dataset.variant || 'paper',
-      pin: el.dataset.pin || '',
-      title: el.dataset.title || '',
-      body: el.querySelector('.body')?.innerHTML ?? '',
-      z: parseFloat(el.dataset.z || '2'),
-    },
-  }),
-  write: (el, item) => {
-    const d = item.data as {
-      x: number; y: number; width: number; height: number; rotation: number;
-      variant: string; pin: string; title: string; body: string; z: number;
+  read: (el) => {
+    const w = window as unknown as { __boxData?: Record<string, BoxData> };
+    const id = el.dataset.id!;
+    const rec = w.__boxData?.[id];
+    if (rec) return { id, data: structuredClone(rec) };
+    return {
+      id,
+      data: {
+        x: parseFloat(el.dataset.x || '0'),
+        y: parseFloat(el.dataset.y || '0'),
+        width: parseFloat(el.dataset.width || '320'),
+        height: parseFloat(el.dataset.height || '160'),
+        rotation: parseFloat(el.dataset.rotation || '0'),
+        variant: el.dataset.variant || 'paper',
+        pin: el.dataset.pin || '',
+        title: el.dataset.title || '',
+        body: el.querySelector('.body')?.innerHTML ?? '',
+        z: parseFloat(el.dataset.z || '2'),
+      },
     };
-    el.style.left = d.x + 'px';
-    el.style.top = d.y + 'px';
+  },
+  write: (el, item) => {
+    const d = item.data as BoxData;
+    const useMobile = isMobileEditor() && d.mobile && d.mobile.x != null && d.mobile.y != null;
+    const rot = useMobile && d.mobile?.rotation != null ? d.mobile.rotation : d.rotation;
+    if (useMobile) {
+      el.style.left = d.mobile!.x + 'px';
+      el.style.top = d.mobile!.y + 'px';
+      el.dataset.x = String(d.mobile!.x);
+      el.dataset.y = String(d.mobile!.y);
+    } else {
+      el.style.left = d.x + 'px';
+      el.style.top = d.y + 'px';
+      el.dataset.x = String(d.x);
+      el.dataset.y = String(d.y);
+    }
     el.style.width = d.width + 'px';
     el.style.height = d.height + 'px';
-    el.style.transform = `rotate(${d.rotation}deg)`;
+    el.style.transform = `rotate(${rot}deg)`;
     el.style.zIndex = String(d.z);
     el.className = `box ${d.variant}`;
-    el.dataset.x = String(d.x);
-    el.dataset.y = String(d.y);
     el.dataset.width = String(d.width);
     el.dataset.height = String(d.height);
     el.dataset.rotation = String(d.rotation);
@@ -298,6 +377,12 @@ const boxAdapter: Adapter = {
     el.dataset.pin = d.pin;
     el.dataset.title = d.title;
     el.dataset.z = String(d.z);
+    if (d.mobile?.x != null) el.dataset.mobileX = String(d.mobile.x);
+    if (d.mobile?.y != null) el.dataset.mobileY = String(d.mobile.y);
+    if (d.mobile?.rotation != null) el.dataset.mobileRotation = String(d.mobile.rotation);
+    if (d.mobile?.scale != null) el.dataset.mobileScale = String(d.mobile.scale);
+    const w = window as unknown as { __boxData?: Record<string, BoxData> };
+    if (w.__boxData) w.__boxData[item.id] = structuredClone(d);
     // Rebuild inner structure but preserve the resize handle (if any).
     const handle = el.querySelector('.edit-handle');
     const parts: string[] = [];
@@ -317,40 +402,64 @@ const boxAdapter: Adapter = {
   },
 };
 
+type PhotoVariant = 'polaroid' | 'polaroid-fit' | 'framed' | 'unframed';
+type PhotoMobile = { x?: number; y?: number; rotation?: number; scale?: number; hide?: boolean };
+type PhotoData = {
+  x: number; y: number; rotation: number; scale: number;
+  photoId: string; variant: PhotoVariant; pinLabel: string; z: number;
+  mobile?: PhotoMobile;
+};
+
+const PHOTO_BASE_FIELDS: AdapterField[] = [
+  {
+    key: 'photoId',
+    label: 'Photo',
+    control: 'select',
+    options: () => {
+      const w = window as unknown as { __photoOptions?: { id: string; caption: string }[] };
+      return (w.__photoOptions || []).map((p) => ({ value: p.id, label: `${p.caption} (${p.id})` }));
+    },
+  },
+  {
+    key: 'variant',
+    label: 'Variant',
+    control: 'select',
+    options: () => [
+      { value: 'polaroid', label: 'polaroid (4:5 crop)' },
+      { value: 'polaroid-fit', label: 'polaroid (hug photo)' },
+      { value: 'framed', label: 'framed (screenshot)' },
+      { value: 'unframed', label: 'unframed (bare image)' },
+    ],
+  },
+  { key: 'pinLabel', label: 'Pin label (framed only)', control: 'text' },
+  { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
+];
+
 const photoAdapter: Adapter = {
   type: 'canvas-photo',
   collection: 'canvasPhotos',
   selector: '[data-editable-type="canvas-photo"]',
   resizable: 'none',
   addLabel: '+ Photo',
-  fields: [
-    {
-      key: 'photoId',
-      label: 'Photo',
-      control: 'select',
-      options: () => {
-        const w = window as unknown as { __photoOptions?: { id: string; caption: string }[] };
-        return (w.__photoOptions || []).map((p) => ({ value: p.id, label: `${p.caption} (${p.id})` }));
-      },
-    },
-    {
-      key: 'variant',
-      label: 'Variant',
-      control: 'select',
-      options: () => [
-        { value: 'polaroid', label: 'polaroid (4:5 crop)' },
-        { value: 'polaroid-fit', label: 'polaroid (hug photo)' },
-        { value: 'framed', label: 'framed (screenshot)' },
-        { value: 'unframed', label: 'unframed (bare image)' },
-      ],
-    },
-    { key: 'pinLabel', label: 'Pin label (framed only)', control: 'text' },
-    { key: 'scale', label: 'Scale', control: 'number', step: 0.1 },
-    { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
-    { key: 'x', label: 'X', control: 'number', step: 10 },
-    { key: 'y', label: 'Y', control: 'number', step: 10 },
-    { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
-  ],
+  fields: () =>
+    isMobileEditor()
+      ? [
+          ...PHOTO_BASE_FIELDS,
+          { key: 'mobile.scale', label: 'Mobile Scale', control: 'number', step: 0.05 },
+          { key: 'mobile.x', label: 'Mobile X', control: 'number', step: 10 },
+          { key: 'mobile.y', label: 'Mobile Y', control: 'number', step: 10 },
+        ]
+      : [
+          ...PHOTO_BASE_FIELDS,
+          { key: 'scale', label: 'Scale', control: 'number', step: 0.1 },
+          { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
+          { key: 'x', label: 'X', control: 'number', step: 10 },
+          { key: 'y', label: 'Y', control: 'number', step: 10 },
+        ],
+  positionKeys: () =>
+    isMobileEditor()
+      ? { x: 'mobile.x', y: 'mobile.y', width: 'width' }
+      : { x: 'x', y: 'y', width: 'width' },
   create: ({ x, y }) => {
     const w = window as unknown as { __photoOptions?: { id: string; caption: string }[] };
     const first = w.__photoOptions?.[0];
@@ -368,33 +477,52 @@ const photoAdapter: Adapter = {
       },
     };
   },
-  read: (el) => ({
-    id: el.dataset.id!,
-    data: {
-      x: parseFloat(el.dataset.x || '0'),
-      y: parseFloat(el.dataset.y || '0'),
-      rotation: parseFloat(el.dataset.rotation || '0'),
-      scale: parseFloat(el.dataset.scale || '1'),
-      photoId: el.dataset.photoId || '',
-      variant: (el.dataset.variant as 'polaroid' | 'polaroid-fit' | 'framed' | 'unframed') || 'polaroid',
-      pinLabel: el.dataset.pinLabel || '',
-      z: parseFloat(el.dataset.z || '2'),
-    },
-  }),
-  write: (el, item) => {
-    const d = item.data as {
-      x: number; y: number; rotation: number; scale: number;
-      photoId: string; variant: 'polaroid' | 'polaroid-fit' | 'framed' | 'unframed'; pinLabel: string; z: number;
+  read: (el) => {
+    const w = window as unknown as { __photoData?: Record<string, PhotoData> };
+    const id = el.dataset.id!;
+    const rec = w.__photoData?.[id];
+    if (rec) return { id, data: structuredClone(rec) };
+    return {
+      id,
+      data: {
+        x: parseFloat(el.dataset.x || '0'),
+        y: parseFloat(el.dataset.y || '0'),
+        rotation: parseFloat(el.dataset.rotation || '0'),
+        scale: parseFloat(el.dataset.scale || '1'),
+        photoId: el.dataset.photoId || '',
+        variant: (el.dataset.variant as PhotoVariant) || 'polaroid',
+        pinLabel: el.dataset.pinLabel || '',
+        z: parseFloat(el.dataset.z || '2'),
+      },
     };
-    el.style.left = d.x + 'px';
-    el.style.top = d.y + 'px';
-    el.style.transform = `rotate(${d.rotation}deg) scale(${d.scale})`;
+  },
+  write: (el, item) => {
+    const d = item.data as PhotoData;
+    const useMobile = isMobileEditor() && d.mobile && d.mobile.x != null && d.mobile.y != null;
+    const rot = useMobile && d.mobile?.rotation != null ? d.mobile.rotation : d.rotation;
+    const scale = useMobile && d.mobile?.scale != null ? d.mobile.scale : d.scale;
+    if (useMobile) {
+      el.style.left = d.mobile!.x + 'px';
+      el.style.top = d.mobile!.y + 'px';
+      el.dataset.x = String(d.mobile!.x);
+      el.dataset.y = String(d.mobile!.y);
+    } else {
+      el.style.left = d.x + 'px';
+      el.style.top = d.y + 'px';
+      el.dataset.x = String(d.x);
+      el.dataset.y = String(d.y);
+    }
+    el.style.transform = `rotate(${rot}deg) scale(${scale})`;
     el.style.zIndex = String(d.z);
-    el.dataset.x = String(d.x);
-    el.dataset.y = String(d.y);
     el.dataset.rotation = String(d.rotation);
     el.dataset.scale = String(d.scale);
     el.dataset.z = String(d.z);
+    if (d.mobile?.x != null) el.dataset.mobileX = String(d.mobile.x);
+    if (d.mobile?.y != null) el.dataset.mobileY = String(d.mobile.y);
+    if (d.mobile?.rotation != null) el.dataset.mobileRotation = String(d.mobile.rotation);
+    if (d.mobile?.scale != null) el.dataset.mobileScale = String(d.mobile.scale);
+    const wpd = window as unknown as { __photoData?: Record<string, PhotoData> };
+    if (wpd.__photoData) wpd.__photoData[item.id] = structuredClone(d);
     // Update variant class on the wrapper. Always remove both then add one,
     // so toggling in the inspector swaps the rendered style immediately.
     const variant = d.variant || 'polaroid';
@@ -440,29 +568,51 @@ const photoAdapter: Adapter = {
   },
 };
 
+type ArrowMobile = { x?: number; y?: number; rotation?: number; scale?: number; hide?: boolean };
+type ArrowData = {
+  kind: string; x: number; y: number; width: number; height: number; rotation: number; z: number;
+  mobile?: ArrowMobile;
+};
+
+const ARROW_BASE_FIELDS: AdapterField[] = [
+  {
+    key: 'kind',
+    label: 'Kind',
+    control: 'select',
+    options: () => {
+      const w = window as unknown as { __arrowKinds?: string[] };
+      return (w.__arrowKinds || []).map((k) => ({ value: k, label: k }));
+    },
+  },
+  { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
+];
+
 const arrowAdapter: Adapter = {
   type: 'arrow',
   collection: 'arrows',
   selector: '[data-editable-type="arrow"]',
   resizable: 'both',
   addLabel: '+ Arrow',
-  fields: [
-    {
-      key: 'kind',
-      label: 'Kind',
-      control: 'select',
-      options: () => {
-        const w = window as unknown as { __arrowKinds?: string[] };
-        return (w.__arrowKinds || []).map((k) => ({ value: k, label: k }));
-      },
-    },
-    { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
-    { key: 'x', label: 'X', control: 'number', step: 10 },
-    { key: 'y', label: 'Y', control: 'number', step: 10 },
-    { key: 'width', label: 'Width', control: 'number', step: 10 },
-    { key: 'height', label: 'Height', control: 'number', step: 10 },
-    { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
-  ],
+  fields: () =>
+    isMobileEditor()
+      ? [
+          ...ARROW_BASE_FIELDS,
+          { key: 'mobile.scale', label: 'Mobile Scale', control: 'number', step: 0.05 },
+          { key: 'mobile.x', label: 'Mobile X', control: 'number', step: 10 },
+          { key: 'mobile.y', label: 'Mobile Y', control: 'number', step: 10 },
+        ]
+      : [
+          ...ARROW_BASE_FIELDS,
+          { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
+          { key: 'x', label: 'X', control: 'number', step: 10 },
+          { key: 'y', label: 'Y', control: 'number', step: 10 },
+          { key: 'width', label: 'Width', control: 'number', step: 10 },
+          { key: 'height', label: 'Height', control: 'number', step: 10 },
+        ],
+  positionKeys: () =>
+    isMobileEditor()
+      ? { x: 'mobile.x', y: 'mobile.y', width: 'width' }
+      : { x: 'x', y: 'y', width: 'width' },
   create: ({ x, y }) => {
     const w = window as unknown as { __arrowKinds?: string[] };
     const kind = w.__arrowKinds?.[0] ?? 'curly-arrow';
@@ -479,34 +629,56 @@ const arrowAdapter: Adapter = {
       },
     };
   },
-  read: (el) => ({
-    id: el.dataset.id!,
-    data: {
-      kind: el.dataset.kind || 'curly-arrow',
-      x: parseFloat(el.dataset.x || '0'),
-      y: parseFloat(el.dataset.y || '0'),
-      width: parseFloat(el.dataset.width || '300'),
-      height: parseFloat(el.dataset.height || '315'),
-      rotation: parseFloat(el.dataset.rotation || '0'),
-      z: parseFloat(el.dataset.z || '1'),
-    },
-  }),
-  write: (el, item) => {
-    const d = item.data as {
-      kind: string; x: number; y: number; width: number; height: number; rotation: number; z: number;
+  read: (el) => {
+    const w = window as unknown as { __arrowData?: Record<string, ArrowData> };
+    const id = el.dataset.id!;
+    const rec = w.__arrowData?.[id];
+    if (rec) return { id, data: structuredClone(rec) };
+    return {
+      id,
+      data: {
+        kind: el.dataset.kind || 'curly-arrow',
+        x: parseFloat(el.dataset.x || '0'),
+        y: parseFloat(el.dataset.y || '0'),
+        width: parseFloat(el.dataset.width || '300'),
+        height: parseFloat(el.dataset.height || '315'),
+        rotation: parseFloat(el.dataset.rotation || '0'),
+        z: parseFloat(el.dataset.z || '1'),
+      },
     };
-    el.style.left = d.x + 'px';
-    el.style.top = d.y + 'px';
+  },
+  write: (el, item) => {
+    const d = item.data as ArrowData;
+    const useMobile = isMobileEditor() && d.mobile && d.mobile.x != null && d.mobile.y != null;
+    const rot = useMobile && d.mobile?.rotation != null ? d.mobile.rotation : d.rotation;
+    const xform = useMobile && d.mobile?.scale != null
+      ? `rotate(${rot}deg) scale(${d.mobile.scale})`
+      : `rotate(${rot}deg)`;
+    if (useMobile) {
+      el.style.left = d.mobile!.x + 'px';
+      el.style.top = d.mobile!.y + 'px';
+      el.dataset.x = String(d.mobile!.x);
+      el.dataset.y = String(d.mobile!.y);
+    } else {
+      el.style.left = d.x + 'px';
+      el.style.top = d.y + 'px';
+      el.dataset.x = String(d.x);
+      el.dataset.y = String(d.y);
+    }
     el.style.width = d.width + 'px';
     el.style.height = d.height + 'px';
-    el.style.transform = `rotate(${d.rotation}deg)`;
+    el.style.transform = xform;
     el.style.zIndex = String(d.z);
-    el.dataset.x = String(d.x);
-    el.dataset.y = String(d.y);
     el.dataset.width = String(d.width);
     el.dataset.height = String(d.height);
     el.dataset.rotation = String(d.rotation);
     el.dataset.z = String(d.z);
+    if (d.mobile?.x != null) el.dataset.mobileX = String(d.mobile.x);
+    if (d.mobile?.y != null) el.dataset.mobileY = String(d.mobile.y);
+    if (d.mobile?.rotation != null) el.dataset.mobileRotation = String(d.mobile.rotation);
+    if (d.mobile?.scale != null) el.dataset.mobileScale = String(d.mobile.scale);
+    const wad = window as unknown as { __arrowData?: Record<string, ArrowData> };
+    if (wad.__arrowData) wad.__arrowData[item.id] = structuredClone(d);
     // Only rebuild inner SVG when kind changes — preserves handle reattachment
     // and avoids repainting on every drag/resize tick.
     if (el.dataset.kind !== d.kind) {
@@ -703,7 +875,7 @@ type CodeblockData = {
   x: number; y: number; rotation: number; z: number;
   label: string; language: string;
   title: string; dek: string; code: string;
-  mobile?: { x: number; y: number };
+  mobile?: { x?: number; y?: number; rotation?: number; scale?: number; hide?: boolean };
 };
 
 const TERMINAL_SVG = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><rect x="2.5" y="4" width="19" height="16"/><path d="M6 9 l3 3 -3 3"/><path d="M11 15 h6"/></svg>';
@@ -714,28 +886,43 @@ const CODE_LANGUAGES = [
   'css', 'html', 'markdown', 'ruby', 'c', 'cpp', 'php',
 ];
 
+const CODEBLOCK_BASE_FIELDS: AdapterField[] = [
+  { key: 'title', label: 'Title (HTML)', control: 'text' },
+  { key: 'label', label: 'Label (optional)', control: 'text' },
+  {
+    key: 'language',
+    label: 'Language',
+    control: 'select',
+    options: () => CODE_LANGUAGES.map((l) => ({ value: l, label: l })),
+  },
+  { key: 'dek', label: 'Dek (HTML, optional)', control: 'text' },
+  { key: 'code', label: 'Code', control: 'textarea' },
+  { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
+];
+
 const codeblockAdapter: Adapter = {
   type: 'codeblock',
   collection: 'codeblocks',
   selector: '[data-editable-type="codeblock"]',
   resizable: 'none',
   addLabel: '+ Code',
-  fields: [
-    { key: 'title', label: 'Title (HTML)', control: 'text' },
-    { key: 'label', label: 'Label (optional)', control: 'text' },
-    {
-      key: 'language',
-      label: 'Language',
-      control: 'select',
-      options: () => CODE_LANGUAGES.map((l) => ({ value: l, label: l })),
-    },
-    { key: 'dek', label: 'Dek (HTML, optional)', control: 'text' },
-    { key: 'code', label: 'Code', control: 'textarea' },
-    { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
-    { key: 'x', label: 'X', control: 'number', step: 10 },
-    { key: 'y', label: 'Y', control: 'number', step: 10 },
-    { key: 'z', label: 'Z (stack)', control: 'number', step: 1 },
-  ],
+  fields: () =>
+    isMobileEditor()
+      ? [
+          ...CODEBLOCK_BASE_FIELDS,
+          { key: 'mobile.x', label: 'Mobile X', control: 'number', step: 10 },
+          { key: 'mobile.y', label: 'Mobile Y', control: 'number', step: 10 },
+        ]
+      : [
+          ...CODEBLOCK_BASE_FIELDS,
+          { key: 'rotation', label: 'Rotation (°)', control: 'number', step: 1 },
+          { key: 'x', label: 'X', control: 'number', step: 10 },
+          { key: 'y', label: 'Y', control: 'number', step: 10 },
+        ],
+  positionKeys: () =>
+    isMobileEditor()
+      ? { x: 'mobile.x', y: 'mobile.y', width: 'width' }
+      : { x: 'x', y: 'y', width: 'width' },
   create: ({ x, y }) => ({
     id: 'codeblock-' + Date.now().toString(36),
     data: {
@@ -774,12 +961,21 @@ const codeblockAdapter: Adapter = {
   },
   write: (el, item) => {
     const d = item.data as CodeblockData;
-    el.style.left = d.x + 'px';
-    el.style.top = d.y + 'px';
-    el.style.transform = `rotate(${d.rotation}deg)`;
+    const useMobile = isMobileEditor() && d.mobile && d.mobile.x != null && d.mobile.y != null;
+    const rot = useMobile && d.mobile?.rotation != null ? d.mobile.rotation : d.rotation;
+    if (useMobile) {
+      el.style.left = d.mobile!.x + 'px';
+      el.style.top = d.mobile!.y + 'px';
+      el.dataset.x = String(d.mobile!.x);
+      el.dataset.y = String(d.mobile!.y);
+    } else {
+      el.style.left = d.x + 'px';
+      el.style.top = d.y + 'px';
+      el.dataset.x = String(d.x);
+      el.dataset.y = String(d.y);
+    }
+    el.style.transform = `rotate(${rot}deg)`;
     el.style.zIndex = String(d.z);
-    el.dataset.x = String(d.x);
-    el.dataset.y = String(d.y);
     el.dataset.rotation = String(d.rotation);
     el.dataset.z = String(d.z);
     el.dataset.label = d.label;
@@ -787,10 +983,10 @@ const codeblockAdapter: Adapter = {
     el.dataset.title = d.title;
     el.dataset.dek = d.dek;
     el.dataset.code = d.code;
-    if (d.mobile) {
-      el.dataset.mobileX = String(d.mobile.x);
-      el.dataset.mobileY = String(d.mobile.y);
-    }
+    if (d.mobile?.x != null) el.dataset.mobileX = String(d.mobile.x);
+    if (d.mobile?.y != null) el.dataset.mobileY = String(d.mobile.y);
+    if (d.mobile?.rotation != null) el.dataset.mobileRotation = String(d.mobile.rotation);
+    if (d.mobile?.scale != null) el.dataset.mobileScale = String(d.mobile.scale);
     const handle = el.querySelector('.edit-handle');
     el.innerHTML =
       `<span class="cb-icon" aria-hidden="true">${TERMINAL_SVG}</span>` +

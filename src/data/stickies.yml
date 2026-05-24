@@ -7,6 +7,10 @@ welcome:
     <b>Welcome my canvas.</b><br>Everything is laid out in space. Drag to roam, scroll to zoom, or use the nav up top to
     teleport.
   z: 2
+  mobile:
+    x: 433
+    y: 3107
+    rotation: 4
 sticky-notes-meta:
   x: 2300
   y: 2600
@@ -14,6 +18,10 @@ sticky-notes-meta:
   color: "#d97947"
   body: currently planning a wedding, please send any info/tips to help@davidlohle.me :)
   z: 2
+  mobile:
+    x: 22
+    y: 2704
+    rotation: -5
 pro-tip:
   x: 4677
   y: 2205
@@ -22,29 +30,29 @@ pro-tip:
   body: <b>Tip:</b> press <b>0</b> to reset the view if you get lost.
   z: 2
 sticky-mphneeon:
-  x: 470
-  y: 1292
+  x: 80
+  y: 5280
   rotation: -5
   color: "#d97947"
   body: This is one of a few custom expansions, which includes a meta-pile (similar to Knights) of cocktails.
   z: 4
 sticky-mphnqa7f:
-  x: 679
-  y: 819
+  x: 420
+  y: 5280
   rotation: 3
   color: "#b8d8a8"
   body: Full card art was a really important UI decision for me; other online variants only offer chopped-off editions.
   z: 3
 sticky-mphos5aa:
-  x: 1919
-  y: 706
+  x: 720
+  y: 5280
   rotation: -1
   color: "#a8c8e8"
   body: Competitive games use OpenSkill for rank ratings, leveraging the PluckettLuce aglorithm
   z: 2
 sticky-mphospr6:
-  x: 1873
-  y: 936
+  x: 80
+  y: 5750
   rotation: 0
   color: "#f4a8b8"
   body: >-
@@ -52,8 +60,8 @@ sticky-mphospr6:
     player profile cosmetics or custom SFX that fires when marquee cards are purchased during gameplay.
   z: 2
 sticky-mphovena:
-  x: 2183
-  y: 1349
+  x: 600
+  y: 5850
   rotation: -4
   color: "#f3c40c"
   body: "An achievement for an in-house rule: VP ties are solved via a coin toss if both players accept. "
