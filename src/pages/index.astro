@@ -172,7 +172,7 @@ const ogType = postEntry ? 'article' : 'website';
         {photos.map((p) => (
           <button type="button" class="ph" data-photo-id={p.id}>
             {p.data.image && (
-              <Image src={p.data.image} alt={p.data.caption} widths={[360, 720]} sizes="360px" />
+              <Image src={p.data.image} alt={p.data.caption} widths={[360, 720]} sizes="360px" draggable={false} />
             )}
             <span class="cap">{p.data.caption}</span>
           </button>
@@ -309,7 +309,7 @@ const ogType = postEntry ? 'article' : 'website';
         >
           <div class="frame">
             {photoImage
-              ? <Image src={photoImage} alt={caption} widths={[300, 600, 900]} sizes="400px" />
+              ? <Image src={photoImage} alt={caption} widths={[300, 600, 900]} sizes="400px" draggable={false} />
               : <div class="placeholder">{caption}</div>}
           </div>
           {variant === 'framed'
