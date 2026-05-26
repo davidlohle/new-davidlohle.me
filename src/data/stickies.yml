@@ -30,39 +30,59 @@ pro-tip:
   body: <b>Tip:</b> press <b>0</b> to reset the view if you get lost.
   z: 2
 sticky-mphneeon:
-  x: 80
-  y: 5280
+  x: 470
+  y: 1292
   rotation: -5
   color: "#d97947"
   body: This is one of a few custom expansions, which includes a meta-pile (similar to Knights) of cocktails.
   z: 4
+  mobile:
+    x: 80
+    y: 5280
+    rotation: -5
 sticky-mphnqa7f:
-  x: 420
-  y: 5280
+  x: 679
+  y: 819
   rotation: 3
   color: "#b8d8a8"
   body: Full card art was a really important UI decision for me; other online variants only offer chopped-off editions.
   z: 3
+  mobile:
+    x: 420
+    y: 5280
+    rotation: 3
 sticky-mphos5aa:
-  x: 720
-  y: 5280
+  x: 1919
+  y: 706
   rotation: -1
   color: "#a8c8e8"
   body: Competitive games use OpenSkill for rank ratings, leveraging the PluckettLuce aglorithm
   z: 2
+  mobile:
+    x: 720
+    y: 5280
+    rotation: -1
 sticky-mphospr6:
-  x: 80
-  y: 5750
+  x: 1873
+  y: 936
   rotation: 0
   color: "#f4a8b8"
   body: >-
     Achievements for common, rare, or challenges. They award points, which are exchangeable at an in-game shop for
     player profile cosmetics or custom SFX that fires when marquee cards are purchased during gameplay.
   z: 2
+  mobile:
+    x: 80
+    y: 5750
+    rotation: 0
 sticky-mphovena:
-  x: 600
-  y: 5850
+  x: 2183
+  y: 1349
   rotation: -4
   color: "#f3c40c"
   body: "An achievement for an in-house rule: VP ties are solved via a coin toss if both players accept. "
   z: 3
+  mobile:
+    x: 600
+    y: 5850
+    rotation: -4
