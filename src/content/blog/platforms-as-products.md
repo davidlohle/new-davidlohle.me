@@ -1,8 +1,8 @@
 ---
-title: "I'm still pushing Platforms as <em>products,</em> a decade later"
+title: "On Platforms as a <em>Product</em>"
 crumb: "Platforms as products"
 date: 2026-05-20
-summary: "A short field guide to treating your internal platform like a product, with all the discipline that entails."
+summary: "Nearly a decade on, treating your platform as a product is more important than ever."
 ---
 
 The first internal platform I ever loved had a logo. Someone on the team had drawn it in Sketch over a long weekend—a little mascot with a name, and printed stickers you could put on your laptop. There was a Slack channel where the team triaged feature requests like a customer support queue. There was a roadmap. There were weekly reviews with users.
