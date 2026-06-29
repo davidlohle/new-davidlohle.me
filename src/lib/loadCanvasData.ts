@@ -32,8 +32,8 @@ export async function loadCanvasData() {
       const { Content } = await render(post);
       const crumb = post.data.crumb ?? post.data.title.replace(/<[^>]+>/g, '');
       const wordCount = (post.body ?? '').trim().split(/\s+/).filter(Boolean).length;
-      const read = `${Math.max(1, Math.round(wordCount / 220))} min read`;
-      return { post, Content, crumb, read, fullDate: fmtFullDate(post.data.date) };
+      //const read = `${Math.max(1, Math.round(wordCount / 220))} min read`;
+      return { post, Content, crumb, fullDate: fmtFullDate(post.data.date) };
     }),
   );
 

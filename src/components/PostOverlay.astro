@@ -22,7 +22,7 @@ const { renderedPosts } = Astro.props;
   <div class="post-backdrop"></div>
   <article class="post-sheet" id="post-sheet">
     <header class="post-topbar">
-      <div class="crumbs"><span>Writing</span><span class="sep">·</span><b id="post-crumb">—</b></div>
+      <div class="crumbs"><span>Writing</span><span class="sep">·</span><b id="post-crumb"></b></div>
       <button class="post-close" id="post-close" type="button" aria-label="Close">×</button>
     </header>
     <div class="post-inner" id="post-inner"></div>
@@ -37,7 +37,6 @@ const { renderedPosts } = Astro.props;
     data-title={post.data.title}
     data-crumb={crumb}
     data-date={fullDate}
-    data-read={read}
     data-dek={post.data.summary ?? ''}
   >
     <Content />
@@ -265,11 +264,9 @@ const { renderedPosts } = Astro.props;
     const date = tpl.dataset.date ?? '';
     const read = tpl.dataset.read ?? '';
     const dek = tpl.dataset.dek ?? '';
-    postCrumb.textContent = crumb;
     postInner.innerHTML = `
       <div class="post-meta">
         <span>${date}</span><span class="sep">·</span>
-        <span class="read">${read}</span><span class="sep">·</span>
         <span>By ${BRAND}</span>
       </div>
       <h1 class="post-title">${title}</h1>
@@ -277,7 +274,7 @@ const { renderedPosts } = Astro.props;
       <div class="post-body"></div>
       <div class="post-footer">
         <button class="back" type="button" id="post-back">← Back to canvas</button>
-        <span>EOF · Thanks for reading</span>
+        <span>EOF</span>
       </div>
     `;
     const bodyEl = postInner.querySelector('.post-body')!;
