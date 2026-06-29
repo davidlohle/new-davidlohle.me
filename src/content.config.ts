@@ -19,7 +19,12 @@ const blog = defineCollection({
     title: z.string(),
     crumb: z.string().optional(),
     date: z.coerce.date(),
+    // `summary` is the on-page dek (rendered italic under the title).
+    // `description` is the search/social meta line Google + OG cards show;
+    // it falls back to `summary` when omitted, so set it only when you want
+    // the crawler-facing copy to differ from the visible dek.
     summary: z.string().optional(),
+    description: z.string().optional(),
     draft: z.boolean().default(false),
   }),
 });

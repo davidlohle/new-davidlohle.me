@@ -2,7 +2,7 @@ import { getCollection, render } from 'astro:content';
 import { getImage } from 'astro:assets';
 import { readdirSync, readFileSync } from 'node:fs';
 import { join as pathJoin } from 'node:path';
-import { fmtFullDate, fmtPhotoDate } from './format';
+import { fmtPhotoDate } from './format';
 
 const PHOTO_MODAL_SIZES = '(max-width: 700px) 95vw, 80vw';
 
@@ -24,18 +24,12 @@ export async function loadCanvasData() {
   // so deep links + SEO work for the entire archive.
   const posts = allPosts.slice(0, 5);
 
-  // Pre-render each post's markdown into an inert <template> so the overlay
-  // can clone the HTML on demand. `crumb` strips inline HTML from the title;
-  // `read` estimates minutes from the raw body word count.
-  const renderedPosts = await Promise.all(
-    allPosts.map(async (post) => {
-      const { Content } = await render(post);
-      const crumb = post.data.crumb ?? post.data.title.replace(/<[^>]+>/g, '');
-      const wordCount = (post.body ?? '').trim().split(/\s+/).filter(Boolean).length;
-      //const read = `${Math.max(1, Math.round(wordCount / 220))} min read`;
-      return { post, Content, crumb, fullDate: fmtFullDate(post.data.date) };
-    }),
-  );
+  // Post bodies are no longer inlined on every page. The overlay fetches each
+  // one on demand from /writing/fragment/<slug>; deep-link pages inline just
+  // their own post (see PostOverlay's activePost). We expose the raw entries
+  // by id so the deep-link route can look up the active post for inlining and
+  // <title>/OG metadata.
+  const postById = new Map(allPosts.map((p) => [p.id, p]));
 
   const allPhotos = await getCollection('photos');
   const photos = [...allPhotos]
@@ -171,7 +165,7 @@ export async function loadCanvasData() {
 
   return {
     posts,
-    renderedPosts,
+    postById,
     photos,
     renderedPhotos,
     photoCount,

@@ -3,6 +3,7 @@ title: "On Platforms as a <em>Product</em>"
 crumb: "Platforms as products"
 date: 2026-05-20
 summary: "Nearly a decade on, treating your platform as a product is more important than ever."
+description: "Why internal platform teams should run their platform like a product—brand, roadmap, user feedback, and the sense of ownership that turns a runtime into something people choose."
 ---
 
 The first internal platform I ever loved had a logo. Someone on the team had drawn it in Sketch over a long weekend—a little mascot with a name, and printed stickers you could put on your laptop. There was a Slack channel where the team triaged feature requests like a customer support queue. There was a roadmap. There were weekly reviews with users.

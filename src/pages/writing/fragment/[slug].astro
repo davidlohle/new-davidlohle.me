@@ -1,0 +1,18 @@
+---
+// Fetchable post-body fragments — /writing/fragment/<slug>. `partial` strips
+// the doctype/<head>/<body> wrapper, so the build emits a bare HTML fragment
+// the overlay script can drop straight into #post-inner via innerHTML. One
+// static file per published post; no SSR (output: static).
+export const partial = true;
+
+import { getCollection } from 'astro:content';
+import PostBody from '../../../components/PostBody.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', (p) => !p.data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+const { post } = Astro.props;
+---
+<PostBody post={post} />

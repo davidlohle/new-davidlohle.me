@@ -1,0 +1,35 @@
+---
+// The inner content of a post: meta byline, title, dek, rendered markdown
+// body, and footer. Shared by two callers so the markup stays identical:
+//   1. src/pages/writing/fragment/[slug].astro — a partial route, fetched on
+//      demand by the overlay script (the lazy-load path).
+//   2. PostOverlay.astro — inlined server-side on /writing/<slug> deep links
+//      so the post is in the initial HTML (SEO, no-JS, no fetch flash).
+// Intentionally style-free: all rules live in PostOverlay's global block,
+// because this markup is injected via innerHTML on the live page and never
+// receives Astro's scoped data-astro-cid attribute.
+import type { CollectionEntry } from 'astro:content';
+import { render } from 'astro:content';
+import { fmtFullDate } from '../lib/format';
+import { site } from '../config/site';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const crumb = post.data.crumb ?? post.data.title.replace(/<[^>]+>/g, '');
+const fullDate = fmtFullDate(post.data.date);
+---
+<div class="post-meta">
+  <span>{fullDate}</span><span class="sep">·</span>
+  <span>By {site.brand.name}</span>
+</div>
+<h1 class="post-title" data-crumb={crumb} set:html={post.data.title}></h1>
+{post.data.summary && <p class="post-dek">{post.data.summary}</p>}
+<div class="post-body"><Content /></div>
+<div class="post-footer">
+  <button class="back" type="button" id="post-back">← Back to canvas</button>
+  <span>EOF</span>
+</div>

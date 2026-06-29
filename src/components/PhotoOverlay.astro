@@ -4,7 +4,7 @@ import type { CollectionEntry } from 'astro:content';
 
 type RenderedPhoto = {
   photo: CollectionEntry<'photos'>;
-  Content: import('astro').ComponentInstance['default'] | any;
+  Content: import('astro/runtime/server/index.js').AstroComponentFactory;
   hasBody: boolean;
   fullDate: string;
 };
