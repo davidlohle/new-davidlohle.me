@@ -255,7 +255,7 @@ const activeCrumb = activePost
       let html = bodyCache.get(id);
       if (html == null) {
         try {
-          const res = await fetch(`/writing/fragment/${id}`);
+          const res = await fetch(`/writing/fragment/${id}/`);
           if (!res.ok) return;
           html = await res.text();
         } catch {
